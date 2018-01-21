@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "262790300546",
+    "firebase_url": "https://elocuteme.firebaseio.com",
+    "project_id": "elocuteme",
+    "storage_bucket": "elocuteme.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:262790300546:android:564b123e59572b30",
+        "android_client_info": {
+          "package_name": "com.ladeezfirstmedia.elocute"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "262790300546-p6nb6hg1scehhv6m18jb6h3560jd8rcn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFtVB3z_D2ckeTLQF04rBcucZdWKOcrgo"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
