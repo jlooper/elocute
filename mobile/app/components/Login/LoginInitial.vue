@@ -28,8 +28,6 @@ export default {
 </script>
 
 <style lang="scss">
-// vue scoped styles are not working with this rollup config, and
-// that's why we scope with this '.login' class
 .login {
   .initial-container {
     margin-top: 250;

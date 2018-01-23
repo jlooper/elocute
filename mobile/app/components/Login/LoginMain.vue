@@ -135,11 +135,7 @@ export default {
         })
         .catch(error => {
           // TODO: Verify if this works
-          if (error.match(/same user/)) {
-            alert("This email address is already in use.")
-          } else {
-            alert("Unfortunately we were unable to create your account.")
-          }
+          alert(error)
           this.isAuthenticating = false;
         });
     },
@@ -187,7 +183,6 @@ export default {
     horizontal-align: center;
     color: #131426;
   }
-  /* Hide a bunch of things to setup the initial animations */
   .form-controls,
   .sign-up-stack {
     opacity: 0;

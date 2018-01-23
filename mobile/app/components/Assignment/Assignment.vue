@@ -7,7 +7,7 @@
       <Image src="~/images/logout.png" class="header-icon" col="2" row="0" @tap="logout()"/>
     </GridLayout>
     <StackLayout class="container">
-        <Image src="~/images/header"/>        
+        <Image src="~/images/header.png"/>        
         <ScrollView style="height: 100%">
             <StackLayout class="card">
                 <Label class="instruction" textWrap="true" text="Press the 'start' button, then read this text aloud, slowly and clearly"></Label>

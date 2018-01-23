@@ -13,7 +13,7 @@ page {
     margin: 0;
     padding: 0;
 }
-.card{
+.card {
     background-color: #F5D1E9; 
     border-radius: 3;
     margin: 10;
@@ -31,14 +31,14 @@ Label {
     height: 30;
     padding-top: 10;
 }
-.header{
+.header {
     vertical-align: center; 
     text-align: center;
 }
-.header-icon{
+.header-icon {
     padding: 3
 }
-text-field {
+TextField {
     padding: 10;
     font-size: 13;
 }
