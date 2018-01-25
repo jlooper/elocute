@@ -13,9 +13,7 @@ webpackJsonp([0],[
 /* 10 */,
 /* 11 */,
 /* 12 */,
-/* 13 */,
-/* 14 */,
-/* 15 */
+/* 13 */
 /* no static exports found */
 /* all exports used */
 /*!******************************************************!*\
@@ -130,9 +128,8 @@ module.exports = function normalizeComponent (
 
 
 /***/ }),
-/* 16 */,
-/* 17 */,
-/* 18 */
+/* 14 */,
+/* 15 */
 /* exports provided: Store, install, mapState, mapMutations, mapGetters, mapActions, createNamespacedHelpers, default */
 /* exports used: default, mapState, mapGetters, mapActions */
 /*!**********************************!*\
@@ -1080,9 +1077,12 @@ var index_esm = {
 
 /* harmony default export */ __webpack_exports__["a"] = (index_esm);
 
-/* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(/*! ./../../process/browser.js */ 58)))
+/* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(/*! ./../../process/browser.js */ 55)))
 
 /***/ }),
+/* 16 */,
+/* 17 */,
+/* 18 */,
 /* 19 */,
 /* 20 */,
 /* 21 */,
@@ -1098,324 +1098,191 @@ var index_esm = {
 /* 31 */
 /* no static exports found */
 /* exports used: default */
-/*!*************************************************************!*\
-  !*** ../~/nativescript-plugin-firebase/firebase.android.js ***!
-  \*************************************************************/
+/*!*********************************************************!*\
+  !*** ../~/nativescript-plugin-firebase/firebase.ios.js ***!
+  \*********************************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var firebase_common_1 = __webpack_require__(/*! ./firebase-common */ 142);
-var appModule = __webpack_require__(/*! tns-core-modules/application */ 2);
-var utils = __webpack_require__(/*! tns-core-modules/utils/utils */ 6);
-var lazy_1 = __webpack_require__(/*! tns-core-modules/utils/lazy */ 25);
-var frame = __webpack_require__(/*! tns-core-modules/ui/frame */ 11);
-var fs = __webpack_require__(/*! tns-core-modules/file-system */ 5);
-firebase_common_1.firebase._launchNotification = null;
+var firebase_common_1 = __webpack_require__(/*! ./firebase-common */ 141);
+var application = __webpack_require__(/*! tns-core-modules/application */ 22);
+var applicationSettings = __webpack_require__(/*! tns-core-modules/application-settings */ 56);
+var utils = __webpack_require__(/*! tns-core-modules/utils/utils */ 1);
+var types = __webpack_require__(/*! tns-core-modules/utils/types */ 6);
+var platform = __webpack_require__(/*! tns-core-modules/platform */ 3);
+var enums_1 = __webpack_require__(/*! tns-core-modules/ui/enums */ 25);
+firebase_common_1.firebase._messagingConnected = null;
+firebase_common_1.firebase._pendingNotifications = [];
+firebase_common_1.firebase._receivedPushTokenCallback = null;
+firebase_common_1.firebase._gIDAuthentication = null;
+firebase_common_1.firebase._cachedInvitation = null;
 firebase_common_1.firebase._cachedDynamicLink = null;
-firebase_common_1.firebase._googleSignInIdToken = null;
-firebase_common_1.firebase._facebookAccessToken = null;
-var fbCallbackManager = null;
-var GOOGLE_SIGNIN_INTENT_ID = 123;
-var REQUEST_INVITE_INTENT_ID = 48;
-var messagingEnabled = lazy_1.default(function () { return typeof (com.google.firebase.messaging) !== "undefined"; });
-var dynamicLinksEnabled = lazy_1.default(function () { return typeof (com.google.android.gms.appinvite) !== "undefined"; });
-(function () {
-    appModule.on(appModule.launchEvent, function (args) {
-        if (messagingEnabled()) {
-            org.nativescript.plugins.firebase.FirebasePluginLifecycleCallbacks.registerCallbacks(appModule.android.nativeApp);
+firebase_common_1.firebase._configured = false;
+var invokeOnRunLoop = (function () {
+    var runloop = CFRunLoopGetMain();
+    return function (func) {
+        CFRunLoopPerformBlock(runloop, kCFRunLoopDefaultMode, func);
+        CFRunLoopWakeUp(runloop);
+    };
+})();
+firebase_common_1.firebase._addObserver = function (eventName, callback) {
+    var queue = utils.ios.getter(NSOperationQueue, NSOperationQueue.mainQueue);
+    return utils.ios.getter(NSNotificationCenter, NSNotificationCenter.defaultCenter).addObserverForNameObjectQueueUsingBlock(eventName, null, queue, callback);
+};
+var handleRemoteNotification = function (app, userInfo) {
+    var userInfoJSON = firebase_common_1.firebase.toJsObject(userInfo);
+    var aps = userInfo.objectForKey("aps");
+    if (aps !== null) {
+        var alrt = aps.objectForKey("alert");
+        if (alrt !== null && alrt.objectForKey) {
+            userInfoJSON.title = alrt.objectForKey("title");
+            userInfoJSON.body = alrt.objectForKey("body");
         }
-        var intent = args.android;
-        var isLaunchIntent = "android.intent.action.VIEW" === intent.getAction();
-        if (!isLaunchIntent && messagingEnabled()) {
-            var extras = intent.getExtras();
-            if (extras !== null && extras.keySet().contains("from")) {
-                var result_1 = {
-                    foreground: false,
-                    data: {}
-                };
-                var iterator = extras.keySet().iterator();
-                while (iterator.hasNext()) {
-                    var key = iterator.next();
-                    if (key !== "from" && key !== "collapse_key") {
-                        result_1[key] = extras.get(key);
-                        result_1.data[key] = extras.get(key);
+    }
+    firebase_common_1.firebase._pendingNotifications.push(userInfoJSON);
+    if (app.applicationState === 0) {
+        userInfoJSON.foreground = true;
+        if (firebase_common_1.firebase._receivedNotificationCallback !== null) {
+            firebase_common_1.firebase._processPendingNotifications();
+        }
+    }
+    else {
+        userInfoJSON.foreground = false;
+    }
+};
+function addBackgroundRemoteNotificationHandler(appDelegate) {
+    if (typeof (FIRMessaging) !== "undefined") {
+        appDelegate.prototype.applicationDidReceiveRemoteNotificationFetchCompletionHandler = function (app, notification, completionHandler) {
+            if (FIRAuth.auth().canHandleNotification(notification)) {
+                completionHandler(1);
+                return;
+            }
+            completionHandler(0);
+            handleRemoteNotification(app, notification);
+        };
+    }
+}
+firebase_common_1.firebase.addAppDelegateMethods = function (appDelegate) {
+    appDelegate.prototype.applicationDidFinishLaunchingWithOptions = function (application, launchOptions) {
+        if (!firebase_common_1.firebase._configured) {
+            firebase_common_1.firebase._configured = true;
+            FIRApp.configure();
+        }
+        if (launchOptions && typeof (FIRMessaging) !== "undefined") {
+            var remoteNotification = launchOptions.objectForKey(UIApplicationLaunchOptionsRemoteNotificationKey);
+            if (remoteNotification) {
+                handleRemoteNotification(application, remoteNotification);
+            }
+        }
+        if (typeof (FBSDKApplicationDelegate) !== "undefined") {
+            FBSDKApplicationDelegate.sharedInstance().applicationDidFinishLaunchingWithOptions(application, launchOptions);
+        }
+        return true;
+    };
+    if (typeof (FBSDKApplicationDelegate) !== "undefined" || typeof (GIDSignIn) !== "undefined" || typeof (FIRInvites) !== "undefined" || typeof (FIRDynamicLink) !== "undefined") {
+        appDelegate.prototype.applicationOpenURLSourceApplicationAnnotation = function (application, url, sourceApplication, annotation) {
+            var result = false;
+            if (typeof (FBSDKApplicationDelegate) !== "undefined") {
+                result = FBSDKApplicationDelegate.sharedInstance().applicationOpenURLSourceApplicationAnnotation(application, url, sourceApplication, annotation);
+            }
+            if (typeof (GIDSignIn) !== "undefined") {
+                result = result || GIDSignIn.sharedInstance().handleURLSourceApplicationAnnotation(url, sourceApplication, annotation);
+            }
+            if (typeof (FIRInvites) !== "undefined") {
+                var receivedInvite = FIRInvites.handleURLSourceApplicationAnnotation(url, sourceApplication, annotation);
+                if (receivedInvite) {
+                    console.log("Deep link from " + sourceApplication + ", Invite ID: " + receivedInvite.inviteId + ", App URL: " + receivedInvite.deepLink);
+                    firebase_common_1.firebase._cachedInvitation = {
+                        deepLink: receivedInvite.deepLink,
+                        matchType: receivedInvite.matchType,
+                        invitationId: receivedInvite.inviteId
+                    };
+                    result = true;
+                }
+            }
+            if (typeof (FIRDynamicLink) !== "undefined") {
+                var dynamicLink = FIRDynamicLinks.dynamicLinks().dynamicLinkFromCustomSchemeURL(url);
+                if (dynamicLink) {
+                    console.log(">>> dynamicLink.url.absoluteString: " + dynamicLink.url.absoluteString);
+                    firebase_common_1.firebase._cachedDynamicLink = {
+                        url: dynamicLink.url.absoluteString,
+                        matchConfidence: dynamicLink.matchConfidence,
+                        minimumAppVersion: dynamicLink.minimumAppVersion
+                    };
+                    result = true;
+                }
+            }
+            return result;
+        };
+    }
+    if (typeof (FBSDKApplicationDelegate) !== "undefined" || typeof (GIDSignIn) !== "undefined" || typeof (FIRDynamicLink) !== "undefined") {
+        appDelegate.prototype.applicationOpenURLOptions = function (application, url, options) {
+            var result = false;
+            if (typeof (FBSDKApplicationDelegate) !== "undefined") {
+                result = FBSDKApplicationDelegate.sharedInstance().applicationOpenURLSourceApplicationAnnotation(application, url, options.valueForKey(UIApplicationOpenURLOptionsSourceApplicationKey), options.valueForKey(UIApplicationOpenURLOptionsAnnotationKey));
+            }
+            if (typeof (GIDSignIn) !== "undefined") {
+                result = result || GIDSignIn.sharedInstance().handleURLSourceApplicationAnnotation(url, options.valueForKey(UIApplicationOpenURLOptionsSourceApplicationKey), options.valueForKey(UIApplicationOpenURLOptionsAnnotationKey));
+            }
+            if (typeof (FIRDynamicLink) !== "undefined") {
+                var dynamicLinks = FIRDynamicLinks.dynamicLinks();
+                var dynamicLink = dynamicLinks.dynamicLinkFromCustomSchemeURL(url);
+                if (dynamicLink) {
+                    if (dynamicLink.url !== null) {
+                        console.log(">>> dynamicLink.url.absoluteString: " + dynamicLink.url.absoluteString);
+                        if (firebase_common_1.firebase._dynamicLinkCallback) {
+                            firebase_common_1.firebase._dynamicLinkCallback({
+                                url: dynamicLink.url.absoluteString,
+                                matchConfidence: dynamicLink.matchConfidence,
+                                minimumAppVersion: dynamicLink.minimumAppVersion
+                            });
+                        }
+                        else {
+                            firebase_common_1.firebase._cachedDynamicLink = {
+                                url: dynamicLink.url.absoluteString,
+                                matchConfidence: dynamicLink.matchConfidence,
+                                minimumAppVersion: dynamicLink.minimumAppVersion
+                            };
+                        }
+                        result = true;
                     }
                 }
-                if (firebase_common_1.firebase._receivedNotificationCallback === null) {
-                    firebase_common_1.firebase._launchNotification = result_1;
-                }
-                else {
-                    setTimeout(function () {
-                        firebase_common_1.firebase._receivedNotificationCallback(result_1);
+            }
+            return result;
+        };
+    }
+    if (typeof (FIRDynamicLink) !== "undefined") {
+        appDelegate.prototype.applicationContinueUserActivityRestorationHandler = function (application, userActivity, restorationHandler) {
+            var result = false;
+            if (typeof (FIRDynamicLink) !== "undefined") {
+                if (userActivity.webpageURL) {
+                    result = FIRDynamicLinks.dynamicLinks().handleUniversalLinkCompletion(userActivity.webpageURL, function (dynamicLink, error) {
+                        if (dynamicLink.url !== null) {
+                            console.log(">>> dynamicLink.url.absoluteString: " + dynamicLink.url.absoluteString);
+                            if (firebase_common_1.firebase._dynamicLinkCallback) {
+                                firebase_common_1.firebase._dynamicLinkCallback({
+                                    url: dynamicLink.url.absoluteString,
+                                    matchConfidence: dynamicLink.matchConfidence,
+                                    minimumAppVersion: dynamicLink.minimumAppVersion
+                                });
+                            }
+                            else {
+                                firebase_common_1.firebase._cachedDynamicLink = {
+                                    url: dynamicLink.url.absoluteString,
+                                    matchConfidence: dynamicLink.matchConfidence,
+                                    minimumAppVersion: dynamicLink.minimumAppVersion
+                                };
+                            }
+                        }
                     });
                 }
             }
-        }
-        else if (isLaunchIntent && dynamicLinksEnabled()) {
-            var getDynamicLinksCallback = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (task.isSuccessful() && task.getResult() !== null) {
-                        var result_2 = task.getResult();
-                        if (firebase_common_1.firebase._dynamicLinkCallback === null) {
-                            firebase_common_1.firebase._cachedDynamicLink = {
-                                url: result_2.getLink().toString(),
-                                matchConfidence: 1,
-                                minimumAppVersion: result_2.getMinimumAppVersion()
-                            };
-                        }
-                        else {
-                            setTimeout(function () {
-                                firebase_common_1.firebase._dynamicLinkCallback({
-                                    url: result_2.getLink().toString(),
-                                    matchConfidence: 1,
-                                    minimumAppVersion: result_2.getMinimumAppVersion()
-                                });
-                            });
-                        }
-                    }
-                }
-            });
-            var firebaseDynamicLinks = com.google.firebase.dynamiclinks.FirebaseDynamicLinks.getInstance();
-            firebaseDynamicLinks.getDynamicLink(intent).addOnCompleteListener(getDynamicLinksCallback);
-        }
-    });
-})();
-firebase_common_1.firebase.toHashMap = function (obj) {
-    var node = new java.util.HashMap();
-    for (var property in obj) {
-        if (obj.hasOwnProperty(property)) {
-            if (obj[property] === null) {
-                node.put(property, null);
-            }
-            else {
-                if (obj[property] instanceof Date) {
-                    node.put(property, new java.util.Date(obj[property].getTime()));
-                }
-                else if (Array.isArray(obj[property])) {
-                    node.put(property, firebase_common_1.firebase.toJavaArray(obj[property]));
-                }
-                else {
-                    switch (typeof obj[property]) {
-                        case 'object':
-                            node.put(property, firebase_common_1.firebase.toHashMap(obj[property], node));
-                            break;
-                        case 'boolean':
-                            node.put(property, java.lang.Boolean.valueOf(String(obj[property])));
-                            break;
-                        case 'number':
-                            if (Number(obj[property]) === obj[property] && obj[property] % 1 === 0)
-                                node.put(property, java.lang.Long.valueOf(String(obj[property])));
-                            else
-                                node.put(property, java.lang.Double.valueOf(String(obj[property])));
-                            break;
-                        case 'string':
-                            node.put(property, String(obj[property]));
-                            break;
-                    }
-                }
-            }
-        }
-    }
-    return node;
-};
-firebase_common_1.firebase.toJavaArray = function (val) {
-    var javaArray = new java.util.ArrayList();
-    for (var i = 0; i < val.length; i++) {
-        javaArray.add(firebase_common_1.firebase.toValue(val[i]));
-    }
-    return javaArray;
-};
-firebase_common_1.firebase.toValue = function (val) {
-    var returnVal = null;
-    if (val !== null) {
-        if (val instanceof Date) {
-            return new java.util.Date(val.getTime());
-        }
-        if (Array.isArray(val)) {
-            return firebase_common_1.firebase.toJavaArray(val);
-        }
-        switch (typeof val) {
-            case 'object':
-                returnVal = firebase_common_1.firebase.toHashMap(val);
-                break;
-            case 'boolean':
-                returnVal = java.lang.Boolean.valueOf(String(val));
-                break;
-            case 'number':
-                if (Number(val) === val && val % 1 === 0)
-                    returnVal = java.lang.Long.valueOf(String(val));
-                else
-                    returnVal = java.lang.Double.valueOf(String(val));
-                break;
-            case 'string':
-                returnVal = String(val);
-                break;
-        }
-    }
-    return returnVal;
-};
-firebase_common_1.firebase.toJsObject = function (javaObj) {
-    return firebase_common_1.firebase.toJsObjectLegacy(javaObj);
-};
-firebase_common_1.firebase.toJsObjectLegacy = function (javaObj) {
-    if (javaObj === null || typeof javaObj !== "object") {
-        return javaObj;
-    }
-    var node;
-    switch (javaObj.getClass().getName()) {
-        case 'java.lang.Boolean':
-            var str = String(javaObj);
-            return Boolean(!!(str === "True" || str === "true"));
-        case 'java.lang.String':
-            return String(javaObj);
-        case 'java.lang.Long':
-        case 'java.lang.Double':
-            return Number(String(javaObj));
-        case 'java.util.Date':
-            return new Date(javaObj);
-        case 'com.google.firebase.firestore.GeoPoint':
-            return {
-                "latitude": javaObj.getLatitude(),
-                "longitude": javaObj.getLongitude()
-            };
-        case 'com.google.firebase.firestore.DocumentReference':
-            var path = javaObj.getPath();
-            var lastSlashIndex = path.lastIndexOf("/");
-            return firebase_common_1.firebase.firestore._getDocumentReference(javaObj, path.substring(0, lastSlashIndex), path.substring(lastSlashIndex + 1));
-        case 'java.util.ArrayList':
-            node = [];
-            for (var i = 0; i < javaObj.size(); i++) {
-                node[i] = firebase_common_1.firebase.toJsObjectLegacy(javaObj.get(i));
-            }
-            break;
-        default:
-            try {
-                node = {};
-                var iterator = javaObj.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    var item = iterator.next();
-                    node[item.getKey()] = firebase_common_1.firebase.toJsObjectLegacy(item.getValue());
-                }
-            }
-            catch (e) {
-                console.log("PLEASE REPORT THIS AT https://github.com/NativeScript/NativeScript/issues: Tried to serialize an unsupported type: javaObj.getClass().getName(), error: " + e);
-            }
-    }
-    return node;
-};
-firebase_common_1.firebase.getCallbackData = function (type, snapshot) {
-    return {
-        type: type,
-        key: snapshot.getKey(),
-        value: firebase_common_1.firebase.toJsObject(snapshot.getValue())
-    };
-};
-firebase_common_1.firebase.authStateListener = null;
-firebase_common_1.firebase.init = function (arg) {
-    return new Promise(function (resolve, reject) {
-        if (firebase_common_1.firebase.initialized) {
-            reject("Firebase already initialized");
-        }
-        firebase_common_1.firebase.initialized = true;
-        var runInit = function () {
-            arg = arg || {};
-            if (typeof (com.google.firebase.database) !== "undefined") {
-                firebase_common_1.firebase.ServerValue = {
-                    TIMESTAMP: firebase_common_1.firebase.toJsObject(com.google.firebase.database.ServerValue.TIMESTAMP)
-                };
-                var fDatabase = com.google.firebase.database.FirebaseDatabase;
-                if (arg.persist) {
-                    try {
-                        fDatabase.getInstance().setPersistenceEnabled(true);
-                    }
-                    catch (ignore) {
-                    }
-                }
-                firebase_common_1.firebase.instance = fDatabase.getInstance().getReference();
-            }
-            if (typeof (com.google.firebase.firestore) !== "undefined") {
-                if (!arg.persist) {
-                    try {
-                        com.google.firebase.firestore.FirebaseFirestore.getInstance().setFirestoreSettings(new com.google.firebase.firestore.FirebaseFirestoreSettings.Builder()
-                            .setPersistenceEnabled(false)
-                            .build());
-                    }
-                    catch (ignore) {
-                    }
-                }
-            }
-            var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-            if (arg.onAuthStateChanged) {
-                firebase_common_1.firebase.authStateListener = new com.google.firebase.auth.FirebaseAuth.AuthStateListener({
-                    onAuthStateChanged: function (fbAuth) {
-                        var user = fbAuth.getCurrentUser();
-                        arg.onAuthStateChanged({
-                            loggedIn: user !== null,
-                            user: toLoginResult(user)
-                        });
-                    }
-                });
-                firebaseAuth.addAuthStateListener(firebase_common_1.firebase.authStateListener);
-            }
-            if (!firebase_common_1.firebase.authStateListener) {
-                firebase_common_1.firebase.authStateListener = new com.google.firebase.auth.FirebaseAuth.AuthStateListener({
-                    onAuthStateChanged: function (fbAuth) {
-                        var user = fbAuth.getCurrentUser();
-                        firebase_common_1.firebase.notifyAuthStateListeners({
-                            loggedIn: user !== null,
-                            user: toLoginResult(user)
-                        });
-                    }
-                });
-                firebaseAuth.addAuthStateListener(firebase_common_1.firebase.authStateListener);
-            }
-            if (messagingEnabled()) {
-                if (arg.onMessageReceivedCallback !== undefined) {
-                    firebase_common_1.firebase.addOnMessageReceivedCallback(arg.onMessageReceivedCallback);
-                }
-                if (arg.onPushTokenReceivedCallback !== undefined) {
-                    firebase_common_1.firebase.addOnPushTokenReceivedCallback(arg.onPushTokenReceivedCallback);
-                }
-            }
-            if (arg.onDynamicLinkCallback !== undefined) {
-                firebase_common_1.firebase.addOnDynamicLinkReceivedCallback(arg.onDynamicLinkCallback);
-            }
-            if (arg.storageBucket) {
-                if (typeof (com.google.firebase.storage) === "undefined") {
-                    reject("Uncomment firebase-storage in the plugin's include.gradle first");
-                    return;
-                }
-                firebase_common_1.firebase.storage = com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(arg.storageBucket);
-            }
-            if (typeof (com.facebook) !== "undefined" && typeof (com.facebook.FacebookSdk) !== "undefined") {
-                com.facebook.FacebookSdk.sdkInitialize(com.tns.NativeScriptApplication.getInstance());
-                fbCallbackManager = com.facebook.CallbackManager.Factory.create();
-                appModule.android.on(appModule.AndroidApplication.activityResultEvent, function (eventData) {
-                    if (eventData.requestCode !== GOOGLE_SIGNIN_INTENT_ID) {
-                        fbCallbackManager.onActivityResult(eventData.requestCode, eventData.resultCode, eventData.intent);
-                    }
-                });
-            }
-            if (typeof (com.google.android.gms.ads) !== "undefined" && typeof (com.google.android.gms.ads.MobileAds) !== "undefined") {
-                com.google.android.gms.ads.MobileAds.initialize(appModule.android.context);
-            }
-            resolve(firebase_common_1.firebase.instance);
+            return result;
         };
-        try {
-            if (appModule.android.foregroundActivity) {
-                runInit();
-            }
-            else {
-                appModule.on(appModule.launchEvent, runInit);
-            }
-        }
-        catch (ex) {
-            console.log("Error in firebase.init: " + ex);
-            reject(ex);
-        }
-    });
+    }
+    addBackgroundRemoteNotificationHandler(appDelegate);
 };
 firebase_common_1.firebase.fetchProvidersForEmail = function (email) {
     return new Promise(function (resolve, reject) {
@@ -1424,18 +1291,14 @@ firebase_common_1.firebase.fetchProvidersForEmail = function (email) {
                 reject("A parameter representing an email address is required.");
                 return;
             }
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        reject((task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                    }
-                    else {
-                        var providerList = task.getResult().getProviders();
-                        resolve(firebase_common_1.firebase.toJsObject(providerList));
-                    }
+            FIRAuth.auth().fetchProvidersForEmailCompletion(email, function (providerNSArray, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve(firebase_common_1.firebase.toJsObject(providerNSArray));
                 }
             });
-            com.google.firebase.auth.FirebaseAuth.getInstance().fetchProvidersForEmail(email).addOnCompleteListener(onCompleteListener);
         }
         catch (ex) {
             console.log("Error in firebase.fetchProvidersForEmail: " + ex);
@@ -1446,11 +1309,11 @@ firebase_common_1.firebase.fetchProvidersForEmail = function (email) {
 firebase_common_1.firebase.getCurrentPushToken = function () {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.messaging || com.google.firebase.iid) === "undefined") {
-                reject("Uncomment firebase-messaging in the plugin's include.gradle first");
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
                 return;
             }
-            resolve(com.google.firebase.iid.FirebaseInstanceId.getInstance().getToken());
+            resolve(FIRMessaging.messaging().FCMToken);
         }
         catch (ex) {
             console.log("Error in firebase.getCurrentPushToken: " + ex);
@@ -1461,20 +1324,13 @@ firebase_common_1.firebase.getCurrentPushToken = function () {
 firebase_common_1.firebase.addOnMessageReceivedCallback = function (callback) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.messaging) === "undefined") {
-                reject("Uncomment firebase-messaging in the plugin's include.gradle first");
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
                 return;
             }
             firebase_common_1.firebase._receivedNotificationCallback = callback;
-            org.nativescript.plugins.firebase.FirebasePlugin.setOnNotificationReceivedCallback(new org.nativescript.plugins.firebase.FirebasePluginListener({
-                success: function (notification) {
-                    callback(JSON.parse(notification));
-                }
-            }));
-            if (firebase_common_1.firebase._launchNotification !== null) {
-                callback(firebase_common_1.firebase._launchNotification);
-                firebase_common_1.firebase._launchNotification = null;
-            }
+            firebase_common_1.firebase._registerForRemoteNotifications();
+            firebase_common_1.firebase._processPendingNotifications();
             resolve();
         }
         catch (ex) {
@@ -1486,8 +1342,8 @@ firebase_common_1.firebase.addOnMessageReceivedCallback = function (callback) {
 firebase_common_1.firebase.addOnDynamicLinkReceivedCallback = function (callback) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.android.gms.appinvite) === "undefined") {
-                reject("Uncomment invites in the plugin's include.gradle first");
+            if (typeof (FIRDynamicLink) === "undefined") {
+                reject("Enable FIRInvites in Podfile first");
                 return;
             }
             firebase_common_1.firebase._dynamicLinkCallback = callback;
@@ -1506,18 +1362,16 @@ firebase_common_1.firebase.addOnDynamicLinkReceivedCallback = function (callback
 firebase_common_1.firebase.addOnPushTokenReceivedCallback = function (callback) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.messaging) === "undefined") {
-                reject("Uncomment firebase-messaging in the plugin's include.gradle first");
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
                 return;
             }
-            org.nativescript.plugins.firebase.FirebasePlugin.setOnPushTokenReceivedCallback(new org.nativescript.plugins.firebase.FirebasePluginListener({
-                success: function (token) {
-                    callback(token);
-                },
-                error: function (err) {
-                    console.log("addOnPushTokenReceivedCallback error: " + err);
-                }
-            }));
+            firebase_common_1.firebase._receivedPushTokenCallback = callback;
+            if (firebase_common_1.firebase._pushToken) {
+                callback(firebase_common_1.firebase._pushToken);
+            }
+            firebase_common_1.firebase._registerForRemoteNotifications();
+            firebase_common_1.firebase._processPendingNotifications();
             resolve();
         }
         catch (ex) {
@@ -1527,32 +1381,341 @@ firebase_common_1.firebase.addOnPushTokenReceivedCallback = function (callback) 
     });
 };
 firebase_common_1.firebase.unregisterForPushNotifications = function () {
-    return Promise.reject("Not supported on Android");
+    return new Promise(function (resolve, reject) {
+        try {
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
+                return;
+            }
+            utils.ios.getter(UIApplication, UIApplication.sharedApplication).unregisterForRemoteNotifications();
+            resolve();
+        }
+        catch (ex) {
+            console.log("Error in firebase.unregisterForPushNotifications: " + ex);
+            reject(ex);
+        }
+    });
 };
-firebase_common_1.firebase.getRemoteConfigDefaults = function (properties) {
-    var defaults = {};
-    for (var p in properties) {
-        var prop = properties[p];
-        if (prop.default !== undefined) {
-            defaults[prop.key] = prop.default;
+firebase_common_1.firebase._processPendingNotifications = function () {
+    var app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    if (!app) {
+        application.on("launch", function () {
+            firebase_common_1.firebase._processPendingNotifications();
+        });
+        return;
+    }
+    if (firebase_common_1.firebase._receivedNotificationCallback !== null) {
+        for (var p in firebase_common_1.firebase._pendingNotifications) {
+            var userInfoJSON = firebase_common_1.firebase._pendingNotifications[p];
+            if (userInfoJSON.aps && userInfoJSON.aps.alert) {
+                userInfoJSON.title = userInfoJSON.aps.alert.title;
+                userInfoJSON.body = userInfoJSON.aps.alert.body;
+            }
+            userInfoJSON.data = userInfoJSON;
+            userInfoJSON.aps = undefined;
+            firebase_common_1.firebase._receivedNotificationCallback(userInfoJSON);
+        }
+        firebase_common_1.firebase._pendingNotifications = [];
+        app.applicationIconBadgeNumber = 0;
+    }
+};
+firebase_common_1.firebase._messagingConnectWithCompletion = function () {
+    return new Promise(function (resolve, reject) {
+        FIRMessaging.messaging().connectWithCompletion(function (error) {
+            if (error) {
+                return reject(error);
+            }
+            firebase_common_1.firebase._messagingConnected = true;
+            resolve();
+        });
+    });
+};
+firebase_common_1.firebase._onTokenRefreshNotification = function (token) {
+    firebase_common_1.firebase._pushToken = token;
+    if (firebase_common_1.firebase._receivedPushTokenCallback) {
+        firebase_common_1.firebase._receivedPushTokenCallback(token);
+    }
+    firebase_common_1.firebase._messagingConnectWithCompletion();
+};
+firebase_common_1.firebase._registerForRemoteNotificationsRanThisSession = false;
+firebase_common_1.firebase._registerForRemoteNotifications = function () {
+    var app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+    if (!app) {
+        application.on("launch", function () {
+            firebase_common_1.firebase._registerForRemoteNotifications();
+        });
+        return;
+    }
+    if (firebase_common_1.firebase._registerForRemoteNotificationsRanThisSession) {
+    }
+    firebase_common_1.firebase._registerForRemoteNotificationsRanThisSession = true;
+    if (parseInt(platform.device.osVersion) >= 10) {
+        var authorizationOptions = 4 | 2 | 1;
+        var curNotCenter = utils.ios.getter(UNUserNotificationCenter, UNUserNotificationCenter.currentNotificationCenter);
+        curNotCenter.requestAuthorizationWithOptionsCompletionHandler(authorizationOptions, function (granted, error) {
+            if (!error) {
+                if (app === null) {
+                    app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+                }
+                if (app !== null) {
+                    invokeOnRunLoop(function () {
+                        app.registerForRemoteNotifications();
+                    });
+                }
+            }
+            else {
+                console.log("Error requesting push notification auth: " + error);
+            }
+        });
+        firebase_common_1.firebase._userNotificationCenterDelegate = UNUserNotificationCenterDelegateImpl.new().initWithCallback(function (unnotification) {
+            var userInfo = unnotification.request.content.userInfo;
+            var userInfoJSON = firebase_common_1.firebase.toJsObject(userInfo);
+            userInfoJSON.foreground = true;
+            firebase_common_1.firebase._pendingNotifications.push(userInfoJSON);
+            if (firebase_common_1.firebase._receivedNotificationCallback !== null) {
+                firebase_common_1.firebase._processPendingNotifications();
+            }
+        });
+        curNotCenter.delegate = firebase_common_1.firebase._userNotificationCenterDelegate;
+        firebase_common_1.firebase._firebaseRemoteMessageDelegate = FIRMessagingDelegateImpl.new().initWithCallback(function (appDataDictionary) {
+            var userInfoJSON = firebase_common_1.firebase.toJsObject(appDataDictionary);
+            firebase_common_1.firebase._pendingNotifications.push(userInfoJSON);
+            var asJs = firebase_common_1.firebase.toJsObject(appDataDictionary.objectForKey("notification"));
+            if (asJs) {
+                userInfoJSON.title = asJs.title;
+                userInfoJSON.body = asJs.body;
+            }
+            var app = utils.ios.getter(UIApplication, UIApplication.sharedApplication);
+            if (app.applicationState === 0) {
+                userInfoJSON.foreground = true;
+                if (firebase_common_1.firebase._receivedNotificationCallback !== null) {
+                    firebase_common_1.firebase._processPendingNotifications();
+                }
+            }
+            else {
+                userInfoJSON.foreground = false;
+            }
+        });
+        FIRMessaging.messaging().remoteMessageDelegate = firebase_common_1.firebase._firebaseRemoteMessageDelegate;
+    }
+    else {
+        var notificationTypes = 4 | 1 | 2 | 1;
+        var notificationSettings = UIUserNotificationSettings.settingsForTypesCategories(notificationTypes, null);
+        invokeOnRunLoop(function () {
+            app.registerForRemoteNotifications();
+        });
+        app.registerUserNotificationSettings(notificationSettings);
+    }
+};
+function getAppDelegate() {
+    if (application.ios.delegate === undefined) {
+        var UIApplicationDelegateImpl = (function (_super) {
+            __extends(UIApplicationDelegateImpl, _super);
+            function UIApplicationDelegateImpl() {
+                return _super !== null && _super.apply(this, arguments) || this;
+            }
+            UIApplicationDelegateImpl.ObjCProtocols = [UIApplicationDelegate];
+            return UIApplicationDelegateImpl;
+        }(UIResponder));
+        application.ios.delegate = UIApplicationDelegateImpl;
+    }
+    return application.ios.delegate;
+}
+function prepAppDelegate() {
+    if (typeof (FIRMessaging) !== "undefined") {
+        firebase_common_1.firebase._addObserver("com.firebase.iid.notif.refresh-token", function (notification) { return firebase_common_1.firebase._onTokenRefreshNotification(notification.object); });
+        firebase_common_1.firebase._addObserver(UIApplicationDidFinishLaunchingNotification, function (appNotification) {
+            if (applicationSettings.getBoolean("registered", false)) {
+                firebase_common_1.firebase._registerForRemoteNotifications();
+            }
+        });
+        firebase_common_1.firebase._addObserver(UIApplicationDidBecomeActiveNotification, function (appNotification) {
+            firebase_common_1.firebase._processPendingNotifications();
+            if (!firebase_common_1.firebase._messagingConnected) {
+                firebase_common_1.firebase._messagingConnectWithCompletion();
+            }
+        });
+        firebase_common_1.firebase._addObserver(UIApplicationDidEnterBackgroundNotification, function (appNotification) {
+            if (firebase_common_1.firebase._messagingConnected) {
+                FIRMessaging.messaging().disconnect();
+            }
+        });
+        firebase_common_1.firebase._addObserver(UIApplicationWillEnterForegroundNotification, function (appNotification) {
+            if (firebase_common_1.firebase._messagingConnected !== null) {
+                FIRMessaging.messaging().connectWithCompletion(function (error) {
+                    if (!error) {
+                        firebase_common_1.firebase._messagingConnected = true;
+                    }
+                });
+            }
+        });
+    }
+    firebase_common_1.firebase.addAppDelegateMethods(getAppDelegate());
+}
+prepAppDelegate();
+firebase_common_1.firebase.toJsObject = function (objCObj) {
+    if (objCObj === null || typeof objCObj !== "object") {
+        return objCObj;
+    }
+    var node, key, i, l, oKeyArr = objCObj.allKeys;
+    if (oKeyArr === undefined) {
+        node = [];
+        for (i = 0, l = objCObj.count; i < l; i++) {
+            key = objCObj.objectAtIndex(i);
+            node.push(firebase_common_1.firebase.toJsObject(key));
         }
     }
-    return defaults;
-};
-firebase_common_1.firebase._isGooglePlayServicesAvailable = function () {
-    var activity = appModule.android.foregroundActivity || appModule.android.startActivity;
-    var googleApiAvailability = com.google.android.gms.common.GoogleApiAvailability.getInstance();
-    var playServiceStatusSuccess = com.google.android.gms.common.ConnectionResult.SUCCESS;
-    var playServicesStatus = googleApiAvailability.isGooglePlayServicesAvailable(activity);
-    var available = playServicesStatus === playServiceStatusSuccess;
-    if (!available && googleApiAvailability.isUserResolvableError(playServicesStatus)) {
-        googleApiAvailability.showErrorDialogFragment(activity, playServicesStatus, 1, new android.content.DialogInterface.OnCancelListener({
-            onCancel: function (dialogInterface) {
-                console.log("Canceled");
+    else {
+        node = {};
+        for (i = 0, l = oKeyArr.count; i < l; i++) {
+            key = oKeyArr.objectAtIndex(i);
+            var val = objCObj.valueForKey(key);
+            if (val === null) {
+                node[key] = null;
+                continue;
             }
-        }));
+            switch (types.getClass(val)) {
+                case 'NSArray':
+                case 'NSMutableArray':
+                    node[key] = firebase_common_1.firebase.toJsObject(val);
+                    break;
+                case 'NSDictionary':
+                case 'NSMutableDictionary':
+                    node[key] = firebase_common_1.firebase.toJsObject(val);
+                    break;
+                case 'String':
+                    node[key] = String(val);
+                    break;
+                case 'Boolean':
+                    node[key] = val;
+                    break;
+                case 'Number':
+                case 'NSDecimalNumber':
+                    node[key] = Number(String(val));
+                    break;
+                case 'Date':
+                    node[key] = new Date(val);
+                    break;
+                case 'FIRDocumentReference':
+                    var path = val.path;
+                    var lastSlashIndex = path.lastIndexOf("/");
+                    node[key] = firebase_common_1.firebase.firestore._getDocumentReference(val, path.substring(0, lastSlashIndex), path.substring(lastSlashIndex + 1));
+                    break;
+                case 'FIRGeoPoint':
+                    node[key] = {
+                        latitude: val.latitude,
+                        longitude: val.longitude
+                    };
+                    break;
+                default:
+                    console.log("Please report this at https://github.com/EddyVerbruggen/nativescript-plugin-firebase/issues: iOS toJsObject is missing a converter for class '" + types.getClass(val) + "'. Casting to String as a fallback.");
+                    node[key] = String(val);
+            }
+        }
     }
-    return available;
+    return node;
+};
+firebase_common_1.firebase.getCallbackData = function (type, snapshot) {
+    return {
+        type: type,
+        key: snapshot.key,
+        value: firebase_common_1.firebase.toJsObject(snapshot.value)
+    };
+};
+firebase_common_1.firebase.authStateListener = null;
+firebase_common_1.firebase.init = function (arg) {
+    return new Promise(function (resolve, reject) {
+        if (firebase_common_1.firebase.initialized) {
+            reject("Firebase already initialized");
+        }
+        firebase_common_1.firebase.initialized = true;
+        try {
+            try {
+                if (typeof (FIRServerValue) !== "undefined") {
+                    firebase_common_1.firebase.ServerValue = {
+                        TIMESTAMP: FIRServerValue.timestamp()
+                    };
+                }
+            }
+            catch (ignore) {
+            }
+            arg = arg || {};
+            if (FIROptions.defaultOptions() !== null) {
+                FIROptions.defaultOptions().deepLinkURLScheme = utils.ios.getter(NSBundle, NSBundle.mainBundle).bundleIdentifier;
+            }
+            if (!firebase_common_1.firebase._configured) {
+                firebase_common_1.firebase._configured = true;
+                FIRApp.configure();
+            }
+            if (typeof (FIRDatabase) !== "undefined") {
+                if (arg.persist) {
+                    FIRDatabase.database().persistenceEnabled = true;
+                }
+                firebase_common_1.firebase.instance = FIRDatabase.database().reference();
+            }
+            if (typeof (FIRFirestore) !== "undefined") {
+                if (arg.persist === false) {
+                    var fIRFirestoreSettings = FIRFirestoreSettings.new();
+                    fIRFirestoreSettings.persistenceEnabled = false;
+                    FIRFirestore.firestore().settings = fIRFirestoreSettings;
+                }
+            }
+            if (arg.iOSEmulatorFlush) {
+                try {
+                    FIRAuth.auth().signOut();
+                }
+                catch (signOutErr) {
+                    console.log('Sign out of Firebase error: ' + signOutErr);
+                }
+            }
+            if (arg.onAuthStateChanged) {
+                firebase_common_1.firebase.authStateListener = function (auth, user) {
+                    arg.onAuthStateChanged({
+                        loggedIn: user !== null,
+                        user: toLoginResult(user)
+                    });
+                };
+                FIRAuth.auth().addAuthStateDidChangeListener(firebase_common_1.firebase.authStateListener);
+            }
+            if (!firebase_common_1.firebase.authStateListener) {
+                firebase_common_1.firebase.authStateListener = function (auth, user) {
+                    firebase_common_1.firebase.notifyAuthStateListeners({
+                        loggedIn: user !== null,
+                        user: toLoginResult(user)
+                    });
+                };
+                FIRAuth.auth().addAuthStateDidChangeListener(firebase_common_1.firebase.authStateListener);
+            }
+            if (arg.onDynamicLinkCallback !== undefined) {
+                firebase_common_1.firebase.addOnDynamicLinkReceivedCallback(arg.onDynamicLinkCallback);
+            }
+            if (typeof (FBSDKAppEvents) !== "undefined") {
+                FBSDKAppEvents.activateApp();
+            }
+            if (typeof (FIRMessaging) !== "undefined") {
+                if (arg.onMessageReceivedCallback !== undefined || arg.onPushTokenReceivedCallback !== undefined) {
+                    if (arg.onMessageReceivedCallback !== undefined) {
+                        firebase_common_1.firebase.addOnMessageReceivedCallback(arg.onMessageReceivedCallback);
+                    }
+                    if (arg.onPushTokenReceivedCallback !== undefined) {
+                        firebase_common_1.firebase.addOnPushTokenReceivedCallback(arg.onPushTokenReceivedCallback);
+                    }
+                }
+            }
+            if (arg.storageBucket) {
+                if (typeof (FIRStorage) === "undefined") {
+                    reject("Uncomment Storage in the plugin's Podfile first");
+                    return;
+                }
+                firebase_common_1.firebase.storage = FIRStorage.storage().referenceForURL(arg.storageBucket);
+            }
+            resolve(firebase_common_1.firebase.instance);
+        }
+        catch (ex) {
+            console.log("Error in firebase.init: " + ex);
+            reject(ex);
+        }
+    });
 };
 firebase_common_1.firebase.analytics.logEvent = function (arg) {
     return new Promise(function (resolve, reject) {
@@ -1561,16 +1724,16 @@ firebase_common_1.firebase.analytics.logEvent = function (arg) {
                 reject("Argument 'key' is missing");
                 return;
             }
-            var bundle = new android.os.Bundle();
+            var dic = NSMutableDictionary.new();
             if (arg.parameters !== undefined) {
                 for (var p in arg.parameters) {
                     var param = arg.parameters[p];
                     if (param.value !== undefined) {
-                        bundle.putString(param.key, param.value);
+                        dic.setObjectForKey(param.value, param.key);
                     }
                 }
             }
-            com.google.firebase.analytics.FirebaseAnalytics.getInstance(appModule.android.currentContext || com.tns.NativeScriptApplication.getInstance()).logEvent(arg.key, bundle);
+            FIRAnalytics.logEventWithNameParameters(arg.key, dic);
             resolve();
         }
         catch (ex) {
@@ -1590,7 +1753,7 @@ firebase_common_1.firebase.analytics.setUserProperty = function (arg) {
                 reject("Argument 'value' is missing");
                 return;
             }
-            com.google.firebase.analytics.FirebaseAnalytics.getInstance(appModule.android.currentContext || com.tns.NativeScriptApplication.getInstance()).setUserProperty(arg.key, arg.value);
+            FIRAnalytics.setUserPropertyStringForName(arg.value, arg.key);
             resolve();
         }
         catch (ex) {
@@ -1606,7 +1769,7 @@ firebase_common_1.firebase.analytics.setScreenName = function (arg) {
                 reject("Argument 'screenName' is missing");
                 return;
             }
-            com.google.firebase.analytics.FirebaseAnalytics.getInstance(appModule.android.currentContext || com.tns.NativeScriptApplication.getInstance()).setCurrentScreen(appModule.android.foregroundActivity, arg.screenName, null);
+            FIRAnalytics.setScreenNameScreenClass(arg.screenName, null);
             resolve();
         }
         catch (ex) {
@@ -1618,46 +1781,49 @@ firebase_common_1.firebase.analytics.setScreenName = function (arg) {
 firebase_common_1.firebase.admob.showBanner = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            var settings = firebase_common_1.firebase.merge(arg, firebase_common_1.firebase.admob.defaults);
-            if (firebase_common_1.firebase.admob.adView !== null && firebase_common_1.firebase.admob.adView !== undefined) {
-                var parent_1 = firebase_common_1.firebase.admob.adView.getParent();
-                if (parent_1 !== null) {
-                    parent_1.removeView(firebase_common_1.firebase.admob.adView);
-                }
+            if (typeof (GADRequest) === "undefined") {
+                reject("Uncomment AdMob in the plugin's Podfile first");
+                return;
             }
-            firebase_common_1.firebase.admob.adView = new com.google.android.gms.ads.AdView(appModule.android.foregroundActivity);
-            firebase_common_1.firebase.admob.adView.setAdUnitId(settings.androidBannerId);
+            if (firebase_common_1.firebase.admob.adView !== null && firebase_common_1.firebase.admob.adView !== undefined) {
+                firebase_common_1.firebase.admob.adView.removeFromSuperview();
+                firebase_common_1.firebase.admob.adView = null;
+            }
+            firebase_common_1.firebase.admob.defaults.view = utils.ios.getter(UIApplication, UIApplication.sharedApplication).keyWindow.rootViewController.view;
+            var settings = firebase_common_1.firebase.merge(arg, firebase_common_1.firebase.admob.defaults);
+            var view = settings.view;
             var bannerType = firebase_common_1.firebase.admob._getBannerType(settings.size);
-            firebase_common_1.firebase.admob.adView.setAdSize(bannerType);
-            var BannerAdListener = com.google.android.gms.ads.AdListener.extend({
-                onAdLoaded: function () {
-                    resolve();
-                },
-                onAdFailedToLoad: function (errorCode) {
-                    reject(errorCode);
+            var adWidth = bannerType.size.width === 0 ? view.frame.size.width : bannerType.size.width;
+            var adHeight = bannerType.size.smartHeight ? bannerType.size.smartHeight : bannerType.size.height;
+            var originX = (view.frame.size.width - adWidth) / 2;
+            var originY = settings.margins.top > -1 ? settings.margins.top : (settings.margins.bottom > -1 ? view.frame.size.height - adHeight - settings.margins.bottom : 0.0);
+            var origin = CGPointMake(originX, originY);
+            firebase_common_1.firebase.admob.adView = GADBannerView.alloc().initWithAdSizeOrigin(bannerType, origin);
+            firebase_common_1.firebase.admob.adView.adUnitID = settings.iosBannerId;
+            var adRequest = GADRequest.request();
+            if (settings.testing) {
+                var testDevices = [];
+                try {
+                    testDevices.push(kGADSimulatorID);
+                }
+                catch (ignore) {
+                }
+                if (settings.iosTestDeviceIds) {
+                    testDevices = testDevices.concat(settings.iosTestDeviceIds);
+                }
+                adRequest.testDevices = testDevices;
+            }
+            firebase_common_1.firebase.admob.adView.rootViewController = utils.ios.getter(UIApplication, UIApplication.sharedApplication).keyWindow.rootViewController;
+            firebase_common_1.firebase.admob.adView.loadRequest(adRequest);
+            view.addSubview(firebase_common_1.firebase.admob.adView);
+            application.on(application.orientationChangedEvent, function (data) {
+                if (firebase_common_1.firebase.admob.adView !== null) {
+                    firebase_common_1.firebase.admob.hideBanner().then(function (res) {
+                        firebase_common_1.firebase.admob.createBanner(arg);
+                    });
                 }
             });
-            firebase_common_1.firebase.admob.adView.setAdListener(new BannerAdListener());
-            var ad = firebase_common_1.firebase.admob._buildAdRequest(settings);
-            firebase_common_1.firebase.admob.adView.loadAd(ad);
-            var density = utils.layout.getDisplayDensity(), top_1 = settings.margins.top * density, bottom = settings.margins.bottom * density;
-            var relativeLayoutParams = new android.widget.RelativeLayout.LayoutParams(android.widget.RelativeLayout.LayoutParams.MATCH_PARENT, android.widget.RelativeLayout.LayoutParams.WRAP_CONTENT);
-            if (bottom > -1) {
-                relativeLayoutParams.bottomMargin = bottom;
-                relativeLayoutParams.addRule(android.widget.RelativeLayout.ALIGN_PARENT_BOTTOM);
-            }
-            else {
-                if (top_1 > -1) {
-                    relativeLayoutParams.topMargin = top_1;
-                }
-                relativeLayoutParams.addRule(android.widget.RelativeLayout.ALIGN_PARENT_TOP);
-            }
-            var adViewLayout_1 = new android.widget.RelativeLayout(appModule.android.foregroundActivity);
-            adViewLayout_1.addView(firebase_common_1.firebase.admob.adView, relativeLayoutParams);
-            var relativeLayoutParamsOuter_1 = new android.widget.RelativeLayout.LayoutParams(android.widget.RelativeLayout.LayoutParams.MATCH_PARENT, android.widget.RelativeLayout.LayoutParams.MATCH_PARENT);
-            setTimeout(function () {
-                frame.topmost().currentPage.android.getParent().addView(adViewLayout_1, relativeLayoutParamsOuter_1);
-            }, 0);
+            resolve();
         }
         catch (ex) {
             console.log("Error in firebase.admob.showBanner: " + ex);
@@ -1668,26 +1834,39 @@ firebase_common_1.firebase.admob.showBanner = function (arg) {
 firebase_common_1.firebase.admob.showInterstitial = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            if (typeof (GADRequest) === "undefined") {
+                reject("Uncomment AdMob in the plugin's Podfile first");
+                return;
+            }
             var settings = firebase_common_1.firebase.merge(arg, firebase_common_1.firebase.admob.defaults);
-            var activity = appModule.android.foregroundActivity || appModule.android.startActivity;
-            firebase_common_1.firebase.admob.interstitialView = new com.google.android.gms.ads.InterstitialAd(activity);
-            firebase_common_1.firebase.admob.interstitialView.setAdUnitId(settings.androidInterstitialId);
-            var InterstitialAdListener = com.google.android.gms.ads.AdListener.extend({
-                onAdLoaded: function () {
-                    firebase_common_1.firebase.admob.interstitialView.show();
-                    resolve();
-                },
-                onAdFailedToLoad: function (errorCode) {
-                    reject(errorCode);
-                },
-                onAdClosed: function () {
-                    firebase_common_1.firebase.admob.interstitialView.setAdListener(null);
-                    firebase_common_1.firebase.admob.interstitialView = null;
+            firebase_common_1.firebase.admob.interstitialView = GADInterstitial.alloc().initWithAdUnitID(settings.iosInterstitialId);
+            var delegate_1 = GADInterstitialDelegateImpl.new().initWithCallback(function (ad, error) {
+                if (error) {
+                    reject(error);
                 }
+                else {
+                    firebase_common_1.firebase.admob.interstitialView.presentFromRootViewController(utils.ios.getter(UIApplication, UIApplication.sharedApplication).keyWindow.rootViewController);
+                    resolve();
+                }
+                CFRelease(delegate_1);
+                delegate_1 = undefined;
             });
-            firebase_common_1.firebase.admob.interstitialView.setAdListener(new InterstitialAdListener());
-            var ad = firebase_common_1.firebase.admob._buildAdRequest(settings);
-            firebase_common_1.firebase.admob.interstitialView.loadAd(ad);
+            CFRetain(delegate_1);
+            firebase_common_1.firebase.admob.interstitialView.delegate = delegate_1;
+            var adRequest = GADRequest.request();
+            if (settings.testing) {
+                var testDevices = [];
+                try {
+                    testDevices.push(kGADSimulatorID);
+                }
+                catch (ignore) {
+                }
+                if (settings.iosTestDeviceIds) {
+                    testDevices = testDevices.concat(settings.iosTestDeviceIds);
+                }
+                adRequest.testDevices = testDevices;
+            }
+            firebase_common_1.firebase.admob.interstitialView.loadRequest(adRequest);
         }
         catch (ex) {
             console.log("Error in firebase.admob.showInterstitial: " + ex);
@@ -1695,14 +1874,11 @@ firebase_common_1.firebase.admob.showInterstitial = function (arg) {
         }
     });
 };
-firebase_common_1.firebase.admob.hideBanner = function (arg) {
+firebase_common_1.firebase.admob.hideBanner = function () {
     return new Promise(function (resolve, reject) {
         try {
             if (firebase_common_1.firebase.admob.adView !== null) {
-                var parent_2 = firebase_common_1.firebase.admob.adView.getParent();
-                if (parent_2 !== null) {
-                    parent_2.removeView(firebase_common_1.firebase.admob.adView);
-                }
+                firebase_common_1.firebase.admob.adView.removeFromSuperview();
                 firebase_common_1.firebase.admob.adView = null;
             }
             resolve();
@@ -1715,135 +1891,81 @@ firebase_common_1.firebase.admob.hideBanner = function (arg) {
 };
 firebase_common_1.firebase.admob._getBannerType = function (size) {
     if (size === firebase_common_1.firebase.admob.AD_SIZE.BANNER) {
-        return com.google.android.gms.ads.AdSize.BANNER;
+        return { "size": { "width": 320, "height": 50 }, "flags": 0 };
     }
     else if (size === firebase_common_1.firebase.admob.AD_SIZE.LARGE_BANNER) {
-        return com.google.android.gms.ads.AdSize.LARGE_BANNER;
+        return { "size": { "width": 320, "height": 100 }, "flags": 0 };
     }
     else if (size === firebase_common_1.firebase.admob.AD_SIZE.MEDIUM_RECTANGLE) {
-        return com.google.android.gms.ads.AdSize.MEDIUM_RECTANGLE;
+        return { "size": { "width": 300, "height": 250 }, "flags": 0 };
     }
     else if (size === firebase_common_1.firebase.admob.AD_SIZE.FULL_BANNER) {
-        return com.google.android.gms.ads.AdSize.FULL_BANNER;
+        return { "size": { "width": 468, "height": 60 }, "flags": 0 };
     }
     else if (size === firebase_common_1.firebase.admob.AD_SIZE.LEADERBOARD) {
-        return com.google.android.gms.ads.AdSize.LEADERBOARD;
+        return { "size": { "width": 728, "height": 90 }, "flags": 0 };
     }
-    else if (size === firebase_common_1.firebase.admob.AD_SIZE.SMART_BANNER) {
-        return com.google.android.gms.ads.AdSize.SMART_BANNER;
+    else if (size === firebase_common_1.firebase.admob.AD_SIZE.SKYSCRAPER) {
+        return { "size": { "width": 120, "height": 600 }, "flags": 0 };
+    }
+    else if (size === firebase_common_1.firebase.admob.AD_SIZE.SMART_BANNER || size === firebase_common_1.firebase.admob.AD_SIZE.FLUID) {
+        var orientation_1 = utils.ios.getter(UIDevice, UIDevice.currentDevice).orientation;
+        var isIPad = platform.device.deviceType === enums_1.DeviceType.Tablet;
+        if (orientation_1 === 1 || orientation_1 === 2) {
+            return { "size": { "width": 0, "height": 0, "smartHeight": isIPad ? 90 : 50 }, "flags": 18 };
+        }
+        else {
+            return { "size": { "width": 0, "height": 0, "smartHeight": isIPad ? 90 : 32 }, "flags": 26 };
+        }
     }
     else {
-        return null;
-    }
-};
-firebase_common_1.firebase.admob._buildAdRequest = function (settings) {
-    var builder = new com.google.android.gms.ads.AdRequest.Builder();
-    if (settings.testing) {
-        builder.addTestDevice(com.google.android.gms.ads.AdRequest.DEVICE_ID_EMULATOR);
-        var activity = appModule.android.foregroundActivity || appModule.android.startActivity;
-        var ANDROID_ID = android.provider.Settings.Secure.getString(activity.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
-        var deviceId = firebase_common_1.firebase.admob._md5(ANDROID_ID);
-        if (deviceId !== null) {
-            deviceId = deviceId.toUpperCase();
-            console.log("Treating this deviceId as testdevice: " + deviceId);
-            builder.addTestDevice(deviceId);
-        }
-    }
-    var bundle = new android.os.Bundle();
-    bundle.putInt("nativescript", 1);
-    var adextras = new com.google.android.gms.ads.mediation.admob.AdMobExtras(bundle);
-    return builder.build();
-};
-firebase_common_1.firebase.admob._md5 = function (input) {
-    try {
-        var digest = java.security.MessageDigest.getInstance("MD5");
-        var bytes = [];
-        for (var j = 0; j < input.length; ++j) {
-            bytes.push(input.charCodeAt(j));
-        }
-        var s = new java.lang.String(input);
-        digest.update(s.getBytes());
-        var messageDigest = digest.digest();
-        var hexString = "";
-        for (var i = 0; i < messageDigest.length; i++) {
-            var h = java.lang.Integer.toHexString(0xFF & messageDigest[i]);
-            while (h.length < 2)
-                h = "0" + h;
-            hexString += h;
-        }
-        return hexString;
-    }
-    catch (noSuchAlgorithmException) {
-        console.log("error generating md5: " + noSuchAlgorithmException);
-        return null;
+        return { "size": { "width": -1, "height": -1 }, "flags": 0 };
     }
 };
 firebase_common_1.firebase.getRemoteConfig = function (arg) {
     return new Promise(function (resolve, reject) {
-        if (typeof (com.google.firebase.remoteconfig) === "undefined") {
-            reject("Uncomment firebase-config in the plugin's include.gradle first");
-            return;
-        }
-        if (arg.properties === undefined) {
-            reject("Argument 'properties' is missing");
-            return;
-        }
-        var runGetRemoteConfig = function () {
-            if (!firebase_common_1.firebase._isGooglePlayServicesAvailable()) {
-                reject("Google Play services is required for this feature, but not available on this device");
+        try {
+            if (typeof (FIRRemoteConfig) === "undefined") {
+                reject("Uncomment RemoteConfig in the plugin's Podfile first");
                 return;
             }
-            var firebaseRemoteConfig = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
-            var remoteConfigSettings = new com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings.Builder()
-                .setDeveloperModeEnabled(arg.developerMode || false)
-                .build();
-            firebaseRemoteConfig.setConfigSettings(remoteConfigSettings);
-            var defaults = firebase_common_1.firebase.getRemoteConfigDefaults(arg.properties);
-            firebaseRemoteConfig.setDefaults(firebase_common_1.firebase.toHashMap(defaults));
-            var returnMethod = function (throttled) {
-                firebaseRemoteConfig.activateFetched();
-                var lastFetchTime = firebaseRemoteConfig.getInfo().getFetchTimeMillis();
-                var lastFetch = new Date(lastFetchTime);
-                var result = {
-                    lastFetch: lastFetch,
-                    throttled: throttled,
-                    properties: {}
-                };
-                for (var p in arg.properties) {
-                    var prop = arg.properties[p];
-                    var key = prop.key;
-                    var value = firebaseRemoteConfig.getString(key);
-                    result.properties[key] = firebase_common_1.firebase.strongTypeify(value);
+            if (arg.properties === undefined) {
+                reject("Argument 'properties' is missing");
+                return;
+            }
+            var firebaseRemoteConfig_1 = FIRRemoteConfig.remoteConfig();
+            firebaseRemoteConfig_1.configSettings = new FIRRemoteConfigSettings({ developerModeEnabled: arg.developerMode || false });
+            var dic = NSMutableDictionary.new();
+            for (var p in arg.properties) {
+                var prop = arg.properties[p];
+                if (prop.default !== undefined) {
+                    dic.setObjectForKey(prop.default, prop.key);
                 }
-                resolve(result);
+            }
+            firebaseRemoteConfig_1.setDefaults(dic);
+            var onCompletion = function (remoteConfigFetchStatus, error) {
+                if (remoteConfigFetchStatus === 1 ||
+                    remoteConfigFetchStatus === 3) {
+                    var activated = firebaseRemoteConfig_1.activateFetched();
+                    var result = {
+                        lastFetch: firebaseRemoteConfig_1.lastFetchTime,
+                        throttled: remoteConfigFetchStatus === 3,
+                        properties: {}
+                    };
+                    for (var p in arg.properties) {
+                        var prop = arg.properties[p];
+                        var key = prop.key;
+                        var value = firebaseRemoteConfig_1.configValueForKey(key).stringValue;
+                        result.properties[key] = firebase_common_1.firebase.strongTypeify(value);
+                    }
+                    resolve(result);
+                }
+                else {
+                    reject(error.localizedDescription);
+                }
             };
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function () {
-                    returnMethod(false);
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    if (exception.getMessage() === "com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException") {
-                        returnMethod(true);
-                    }
-                    else {
-                        reject("Retrieving remote config data failed. " + exception);
-                    }
-                }
-            });
             var expirationDuration = arg.cacheExpirationSeconds || 43200;
-            firebaseRemoteConfig.fetch(expirationDuration)
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
-        };
-        try {
-            if (appModule.android.foregroundActivity) {
-                runGetRemoteConfig();
-            }
-            else {
-                appModule.on(appModule.launchEvent, runGetRemoteConfig);
-            }
+            firebaseRemoteConfig_1.fetchWithExpirationDurationCompletionHandler(expirationDuration, onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.getRemoteConfig: " + ex);
@@ -1854,9 +1976,13 @@ firebase_common_1.firebase.getRemoteConfig = function (arg) {
 firebase_common_1.firebase.getCurrentUser = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-            var user = firebaseAuth.getCurrentUser();
-            if (user !== null) {
+            var fAuth = FIRAuth.auth();
+            if (fAuth === null) {
+                reject("Run init() first!");
+                return;
+            }
+            var user = fAuth.currentUser;
+            if (user) {
                 resolve(toLoginResult(user));
             }
             else {
@@ -1872,20 +1998,22 @@ firebase_common_1.firebase.getCurrentUser = function (arg) {
 firebase_common_1.firebase.sendEmailVerification = function () {
     return new Promise(function (resolve, reject) {
         try {
-            var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-            var user = firebaseAuth.getCurrentUser();
-            if (user !== null) {
-                var addOnCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                    onComplete: function (task) {
-                        if (!task.isSuccessful()) {
-                            reject((task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                        }
-                        else {
-                            resolve();
-                        }
+            var fAuth = FIRAuth.auth();
+            if (fAuth === null) {
+                reject("Run init() first!");
+                return;
+            }
+            var user = fAuth.currentUser;
+            if (user) {
+                var onCompletion = function (error) {
+                    if (error) {
+                        reject(error.localizedDescription);
                     }
-                });
-                user.sendEmailVerification().addOnCompleteListener(addOnCompleteListener);
+                    else {
+                        resolve(true);
+                    }
+                };
+                user.sendEmailVerificationWithCompletion(onCompletion);
             }
             else {
                 reject("Log in first");
@@ -1900,12 +2028,12 @@ firebase_common_1.firebase.sendEmailVerification = function () {
 firebase_common_1.firebase.logout = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
-            if (firebase_common_1.firebase._mGoogleApiClient) {
-                com.google.android.gms.auth.api.Auth.GoogleSignInApi.revokeAccess(firebase_common_1.firebase._mGoogleApiClient);
+            FIRAuth.auth().signOut();
+            if (typeof (GIDSignIn) !== "undefined") {
+                GIDSignIn.sharedInstance().disconnect();
             }
-            if (typeof (com.facebook) !== "undefined" && typeof (com.facebook.login) !== "undefined") {
-                com.facebook.login.LoginManager.getInstance().logOut();
+            if (typeof (FBSDKLoginManager) !== "undefined") {
+                FBSDKLoginManager.alloc().logOut();
             }
             resolve();
         }
@@ -1915,25 +2043,54 @@ firebase_common_1.firebase.logout = function (arg) {
         }
     });
 };
+function toLoginResult(user) {
+    if (!user) {
+        return false;
+    }
+    var providers = [];
+    for (var i = 0, l = user.providerData.count; i < l; i++) {
+        var firUserInfo = user.providerData.objectAtIndex(i);
+        var pid = firUserInfo.valueForKey("providerID");
+        if (pid === 'facebook.com' && typeof (FBSDKAccessToken) !== "undefined") {
+            var fbCurrentAccessToken = FBSDKAccessToken.currentAccessToken();
+            providers.push({ id: pid, token: fbCurrentAccessToken ? fbCurrentAccessToken.tokenString : null });
+        }
+        else {
+            providers.push({ id: pid });
+        }
+    }
+    return {
+        uid: user.uid,
+        anonymous: user.anonymous,
+        isAnonymous: user.anonymous,
+        providers: providers,
+        profileImageURL: user.photoURL ? user.photoURL.absoluteString : null,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        name: user.displayName,
+        phoneNumber: user.phoneNumber,
+        refreshToken: user.refreshToken
+    };
+}
 firebase_common_1.firebase.getAuthToken = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-            var user = firebaseAuth.getCurrentUser();
-            if (user !== null) {
-                var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                    onSuccess: function (getTokenResult) {
-                        resolve(getTokenResult.getToken());
+            var fAuth = FIRAuth.auth();
+            if (fAuth === null) {
+                reject("Run init() first!");
+                return;
+            }
+            var user = fAuth.currentUser;
+            if (user) {
+                var onCompletion = function (token, error) {
+                    if (error) {
+                        reject(error.localizedDescription);
                     }
-                });
-                var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                    onFailure: function (exception) {
-                        reject(exception);
+                    else {
+                        resolve(token);
                     }
-                });
-                user.getIdToken(arg.forceRefresh)
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnFailureListener(onFailureListener);
+                };
+                user.getTokenForcingRefreshCompletion(arg.forceRefresh, onCompletion);
             }
             else {
                 reject("Log in first");
@@ -1945,77 +2102,53 @@ firebase_common_1.firebase.getAuthToken = function (arg) {
         }
     });
 };
-function toLoginResult(user) {
-    if (user === null) {
-        return false;
-    }
-    var providers = [];
-    var providerData = user.getProviderData();
-    for (var i = 0; i < providerData.size(); i++) {
-        var pid = providerData.get(i).getProviderId();
-        if (pid === 'facebook.com') {
-            providers.push({ id: pid, token: firebase_common_1.firebase._facebookAccessToken });
-        }
-        else {
-            providers.push({ id: pid });
-        }
-    }
-    return {
-        uid: user.getUid(),
-        name: user.getDisplayName(),
-        email: user.getEmail(),
-        emailVerified: user.isEmailVerified(),
-        providers: providers,
-        anonymous: user.isAnonymous(),
-        isAnonymous: user.isAnonymous(),
-        phoneNumber: user.getPhoneNumber(),
-        profileImageURL: user.getPhotoUrl() ? user.getPhotoUrl().toString() : null
-    };
-}
 firebase_common_1.firebase.login = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            if (!firebase_common_1.firebase._isGooglePlayServicesAvailable()) {
-                reject("Google Play services is required for this feature, but not available on this device");
+            var onCompletion_1 = function (user, error) {
+                if (error) {
+                    if (typeof (GIDSignIn) !== "undefined") {
+                        GIDSignIn.sharedInstance().disconnect();
+                    }
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve(toLoginResult(user));
+                    firebase_common_1.firebase.notifyAuthStateListeners({
+                        loggedIn: true,
+                        user: user
+                    });
+                }
+            };
+            var fAuth_1 = FIRAuth.auth();
+            if (fAuth_1 === null) {
+                reject("Run init() first!");
                 return;
             }
             firebase_common_1.firebase.moveLoginOptionsToObjects(arg);
-            var firebaseAuth_1 = com.google.firebase.auth.FirebaseAuth.getInstance();
-            var onCompleteListener_1 = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        console.log("Logging in the user failed. " + (task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                        if (firebase_common_1.firebase._mGoogleApiClient) {
-                            com.google.android.gms.auth.api.Auth.GoogleSignInApi.revokeAccess(firebase_common_1.firebase._mGoogleApiClient);
-                        }
-                        reject("Logging in the user failed. " + (task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                    }
-                    else {
-                        var user = task.getResult().getUser();
-                        resolve(toLoginResult(user));
-                    }
-                }
-            });
             if (arg.type === firebase_common_1.firebase.LoginType.ANONYMOUS) {
-                firebaseAuth_1.signInAnonymously().addOnCompleteListener(onCompleteListener_1);
+                fAuth_1.signInAnonymouslyWithCompletion(onCompletion_1);
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.PASSWORD) {
                 if (!arg.passwordOptions || !arg.passwordOptions.email || !arg.passwordOptions.password) {
                     reject("Auth type PASSWORD requires an 'passwordOptions.email' and 'passwordOptions.password' argument");
                     return;
                 }
-                var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                if (user) {
-                    if (firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "password")) {
-                        firebaseAuth_1.signInWithEmailAndPassword(arg.passwordOptions.email, arg.passwordOptions.password).addOnCompleteListener(onCompleteListener_1);
-                    }
-                    else {
-                        var authCredential = com.google.firebase.auth.EmailAuthProvider.getCredential(arg.passwordOptions.email, arg.passwordOptions.password);
-                        user.linkWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                    }
+                var fIRAuthCredential_1 = FIREmailAuthProvider.credentialWithEmailPassword(arg.passwordOptions.email, arg.passwordOptions.password);
+                if (fAuth_1.currentUser) {
+                    var onCompletionLink = function (user, error) {
+                        if (error) {
+                            log("--- linking error: " + error.localizedDescription);
+                            fAuth_1.signInWithCredentialCompletion(fIRAuthCredential_1, onCompletion_1);
+                        }
+                        else {
+                            onCompletion_1(user);
+                        }
+                    };
+                    fAuth_1.currentUser.linkWithCredentialCompletion(fIRAuthCredential_1, onCompletionLink);
                 }
                 else {
-                    firebaseAuth_1.signInWithEmailAndPassword(arg.passwordOptions.email, arg.passwordOptions.password).addOnCompleteListener(onCompleteListener_1);
+                    fAuth_1.signInWithEmailPasswordCompletion(arg.passwordOptions.email, arg.passwordOptions.password, onCompletion_1);
                 }
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.PHONE) {
@@ -2023,52 +2156,29 @@ firebase_common_1.firebase.login = function (arg) {
                     reject("Auth type PHONE requires a 'phoneOptions.phoneNumber' argument");
                     return;
                 }
-                var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                if (user && firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "phone")) {
-                    resolve(toLoginResult(user));
-                    return;
-                }
-                var OnVerificationStateChangedCallbacks = com.google.firebase.auth.PhoneAuthProvider.OnVerificationStateChangedCallbacks.extend({
-                    onVerificationCompleted: function (phoneAuthCredential) {
-                        firebase_common_1.firebase._verifyPhoneNumberInProgress = false;
-                        var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                        if (!user || firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "phone")) {
-                            firebaseAuth_1.signInWithCredential(phoneAuthCredential).addOnCompleteListener(onCompleteListener_1);
-                        }
-                        else {
-                            user.linkWithCredential(phoneAuthCredential).addOnCompleteListener(onCompleteListener_1);
-                        }
-                    },
-                    onVerificationFailed: function (firebaseException) {
-                        firebase_common_1.firebase._verifyPhoneNumberInProgress = false;
-                        var errorMessage = firebaseException.getMessage();
-                        if (errorMessage.indexOf("INVALID_APP_CREDENTIAL") > -1) {
-                            reject("Please upload the SHA1 fingerprint of your debug and release keystores to the Firebase console, see https://github.com/EddyVerbruggen/nativescript-plugin-firebase/blob/master/docs/AUTHENTICATION.md#phone-verification");
-                        }
-                        else {
-                            reject(errorMessage);
-                        }
-                    },
-                    onCodeSent: function (verificationId, forceResendingToken) {
-                        setTimeout(function () {
-                            if (firebase_common_1.firebase._verifyPhoneNumberInProgress) {
-                                firebase_common_1.firebase._verifyPhoneNumberInProgress = false;
-                                firebase_common_1.firebase.requestPhoneAuthVerificationCode(function (userResponse) {
-                                    var authCredential = com.google.firebase.auth.PhoneAuthProvider.getCredential(verificationId, userResponse);
-                                    var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                                    if (!user || firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "phone")) {
-                                        firebaseAuth_1.signInWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                                    }
-                                    else {
-                                        user.linkWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                                    }
-                                }, arg.phoneOptions.verificationPrompt);
-                            }
-                        }, 3000);
+                FIRPhoneAuthProvider.provider().verifyPhoneNumberCompletion(arg.phoneOptions.phoneNumber, function (verificationID, error) {
+                    if (error) {
+                        reject(error.localizedDescription);
+                        return;
                     }
+                    firebase_common_1.firebase.requestPhoneAuthVerificationCode(function (userResponse) {
+                        var fIRAuthCredential = FIRPhoneAuthProvider.provider().credentialWithVerificationIDVerificationCode(verificationID, userResponse);
+                        if (fAuth_1.currentUser) {
+                            var onCompletionLink = function (user, error) {
+                                if (error) {
+                                    fAuth_1.signInWithCredentialCompletion(fIRAuthCredential, onCompletion_1);
+                                }
+                                else {
+                                    onCompletion_1(user);
+                                }
+                            };
+                            fAuth_1.currentUser.linkWithCredentialCompletion(fIRAuthCredential, onCompletionLink);
+                        }
+                        else {
+                            fAuth_1.signInWithCredentialCompletion(fIRAuthCredential, onCompletion_1);
+                        }
+                    }, arg.phoneOptions.verificationPrompt);
                 });
-                firebase_common_1.firebase._verifyPhoneNumberInProgress = true;
-                com.google.firebase.auth.PhoneAuthProvider.getInstance().verifyPhoneNumber(arg.phoneOptions.phoneNumber, 60, java.util.concurrent.TimeUnit.SECONDS, appModule.android.foregroundActivity, new OnVerificationStateChangedCallbacks());
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.CUSTOM) {
                 if (!arg.customOptions || (!arg.customOptions.token && !arg.customOptions.tokenProviderFn)) {
@@ -2076,109 +2186,95 @@ firebase_common_1.firebase.login = function (arg) {
                     return;
                 }
                 if (arg.customOptions.token) {
-                    firebaseAuth_1.signInWithCustomToken(arg.customOptions.token).addOnCompleteListener(onCompleteListener_1);
+                    fAuth_1.signInWithCustomTokenCompletion(arg.customOptions.token, onCompletion_1);
                 }
                 else if (arg.customOptions.tokenProviderFn) {
                     arg.customOptions.tokenProviderFn()
                         .then(function (token) {
-                        firebaseAuth_1.signInWithCustomToken(token).addOnCompleteListener(onCompleteListener_1);
+                        fAuth_1.signInWithCustomTokenCompletion(token, onCompletion_1);
                     }, function (error) {
                         reject(error);
                     });
                 }
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.FACEBOOK) {
-                if (typeof (com.facebook) === "undefined") {
-                    reject("Facebook SDK not installed - see gradle config");
+                if (typeof (FBSDKLoginManager) === "undefined") {
+                    reject("Facebook SDK not installed - see Podfile");
                     return;
                 }
-                var fbLoginManager = com.facebook.login.LoginManager.getInstance();
-                fbLoginManager.registerCallback(fbCallbackManager, new com.facebook.FacebookCallback({
-                    onSuccess: function (loginResult) {
-                        firebase_common_1.firebase._facebookAccessToken = loginResult.getAccessToken().getToken();
-                        var authCredential = com.google.firebase.auth.FacebookAuthProvider.getCredential(firebase_common_1.firebase._facebookAccessToken);
-                        var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                        if (user) {
-                            if (firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "facebook.com")) {
-                                firebaseAuth_1.signInWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                            }
-                            else {
-                                user.linkWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                            }
+                var onFacebookCompletion = function (fbSDKLoginManagerLoginResult, error) {
+                    if (error) {
+                        console.log("Facebook login error " + error);
+                        reject(error.localizedDescription);
+                    }
+                    else if (fbSDKLoginManagerLoginResult.isCancelled) {
+                        reject("login cancelled");
+                    }
+                    else {
+                        var fIRAuthCredential_2 = FIRFacebookAuthProvider.credentialWithAccessToken(FBSDKAccessToken.currentAccessToken().tokenString);
+                        if (fAuth_1.currentUser) {
+                            var onCompletionLink = function (user, error) {
+                                if (error) {
+                                    log("--- linking error: " + error.localizedDescription);
+                                    fAuth_1.signInWithCredentialCompletion(fIRAuthCredential_2, onCompletion_1);
+                                }
+                                else {
+                                    onCompletion_1(user);
+                                }
+                            };
+                            fAuth_1.currentUser.linkWithCredentialCompletion(fIRAuthCredential_2, onCompletionLink);
                         }
                         else {
-                            firebaseAuth_1.signInWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
+                            fAuth_1.signInWithCredentialCompletion(fIRAuthCredential_2, onCompletion_1);
                         }
-                    },
-                    onCancel: function () {
-                        reject("Facebook Login canceled");
-                    },
-                    onError: function (ex) {
-                        reject("Error while trying to login with Fb " + ex);
                     }
-                }));
+                };
+                var fbSDKLoginManager = FBSDKLoginManager.new();
                 var scope = ["public_profile", "email"];
                 if (arg.facebookOptions && arg.facebookOptions.scope) {
                     scope = arg.facebookOptions.scope;
                 }
-                var permissions = utils.ad.collections.stringArrayToStringSet(scope);
-                var activity = appModule.android.foregroundActivity;
-                fbLoginManager.logInWithReadPermissions(activity, permissions);
+                fbSDKLoginManager.logInWithReadPermissionsFromViewControllerHandler(scope, null, onFacebookCompletion);
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.GOOGLE) {
-                if (typeof (com.google.android.gms.auth.api.Auth) === "undefined") {
-                    reject("Google Sign In not installed - see gradle config");
+                if (typeof (GIDSignIn) === "undefined") {
+                    reject("Google Sign In not installed - see Podfile");
                     return;
                 }
-                var clientStringId = utils.ad.resources.getStringId("default_web_client_id");
-                var clientId = utils.ad.getApplicationContext().getResources().getString(clientStringId);
-                var googleSignInOptionsBuilder = new com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(clientId)
-                    .requestEmail();
+                var sIn = GIDSignIn.sharedInstance();
+                sIn.uiDelegate = application.ios.rootController;
+                sIn.clientID = FIRApp.defaultApp().options.clientID;
                 if (arg.googleOptions && arg.googleOptions.hostedDomain) {
-                    googleSignInOptionsBuilder.setHostedDomain(arg.googleOptions.hostedDomain);
+                    sIn.hostedDomain = arg.googleOptions.hostedDomain;
                 }
-                var googleSignInOptions = googleSignInOptionsBuilder.build();
-                var onConnectionFailedListener = new com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener({
-                    onConnectionFailed: function (connectionResult) {
-                        reject(connectionResult.getErrorMessage());
-                    }
-                });
-                firebase_common_1.firebase._mGoogleApiClient = new com.google.android.gms.common.api.GoogleApiClient.Builder(com.tns.NativeScriptApplication.getInstance())
-                    .addOnConnectionFailedListener(onConnectionFailedListener)
-                    .addApi(com.google.android.gms.auth.api.Auth.GOOGLE_SIGN_IN_API, googleSignInOptions)
-                    .build();
-                var signInIntent = com.google.android.gms.auth.api.Auth.GoogleSignInApi.getSignInIntent(firebase_common_1.firebase._mGoogleApiClient);
-                appModule.android.currentContext.startActivityForResult(signInIntent, GOOGLE_SIGNIN_INTENT_ID);
-                appModule.android.on(appModule.AndroidApplication.activityResultEvent, function (eventData) {
-                    if (eventData.requestCode === GOOGLE_SIGNIN_INTENT_ID) {
-                        var googleSignInResult = com.google.android.gms.auth.api.Auth.GoogleSignInApi.getSignInResultFromIntent(eventData.intent);
-                        var success = googleSignInResult.isSuccess();
-                        if (success) {
-                            var googleSignInAccount = googleSignInResult.getSignInAccount();
-                            firebase_common_1.firebase._googleSignInIdToken = googleSignInAccount.getIdToken();
-                            var accessToken = null;
-                            var authCredential = com.google.firebase.auth.GoogleAuthProvider.getCredential(firebase_common_1.firebase._googleSignInIdToken, accessToken);
-                            firebase_common_1.firebase._mGoogleApiClient.connect();
-                            var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
-                            if (user) {
-                                if (firebase_common_1.firebase._alreadyLinkedToAuthProvider(user, "google.com")) {
-                                    firebaseAuth_1.signInWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
+                var delegate_2 = GIDSignInDelegateImpl.new().initWithCallback(function (user, error) {
+                    if (error === null) {
+                        firebase_common_1.firebase._gIDAuthentication = user.authentication;
+                        var fIRAuthCredential_3 = FIRGoogleAuthProvider.credentialWithIDTokenAccessToken(firebase_common_1.firebase._gIDAuthentication.idToken, firebase_common_1.firebase._gIDAuthentication.accessToken);
+                        if (fAuth_1.currentUser) {
+                            var onCompletionLink = function (user, error) {
+                                if (error) {
+                                    fAuth_1.signInWithCredentialCompletion(fIRAuthCredential_3, onCompletion_1);
                                 }
                                 else {
-                                    user.linkWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
+                                    onCompletion_1(user);
                                 }
-                            }
-                            else {
-                                firebaseAuth_1.signInWithCredential(authCredential).addOnCompleteListener(onCompleteListener_1);
-                            }
+                            };
+                            fAuth_1.currentUser.linkWithCredentialCompletion(fIRAuthCredential_3, onCompletionLink);
                         }
                         else {
-                            console.log("Make sure you've uploaded your SHA1 fingerprint(s) to the Firebase console");
-                            reject("Has the SHA1 fingerprint been uploaded? Sign-in status: " + googleSignInResult.getStatus());
+                            fAuth_1.signInWithCredentialCompletion(fIRAuthCredential_3, onCompletion_1);
                         }
                     }
+                    else {
+                        reject(error.localizedDescription);
+                    }
+                    CFRelease(delegate_2);
+                    delegate_2 = undefined;
                 });
+                CFRetain(delegate_2);
+                sIn.delegate = delegate_2;
+                sIn.signIn();
             }
             else {
                 reject("Unsupported auth type: " + arg.type);
@@ -2190,20 +2286,15 @@ firebase_common_1.firebase.login = function (arg) {
         }
     });
 };
-firebase_common_1.firebase._alreadyLinkedToAuthProvider = function (user, providerId) {
-    var providerData = user.getProviderData();
-    for (var i = 0; i < providerData.size(); i++) {
-        var profile = providerData.get(i);
-        if (profile.getProviderId() === providerId) {
-            return true;
-        }
-    }
-    return false;
-};
 firebase_common_1.firebase.reauthenticate = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            var fAuth = FIRAuth.auth();
+            if (fAuth === null) {
+                reject("Run init() first!");
+                return;
+            }
+            var user = fAuth.currentUser;
             if (user === null) {
                 reject("no current user");
                 return;
@@ -2215,37 +2306,36 @@ firebase_common_1.firebase.reauthenticate = function (arg) {
                     reject("Auth type PASSWORD requires an 'passwordOptions.email' and 'passwordOptions.password' argument");
                     return;
                 }
-                authCredential = com.google.firebase.auth.EmailAuthProvider.getCredential(arg.passwordOptions.email, arg.passwordOptions.password);
+                authCredential = FIREmailAuthProvider.credentialWithEmailPassword(arg.passwordOptions.email, arg.passwordOptions.password);
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.GOOGLE) {
-                if (!firebase_common_1.firebase._googleSignInIdToken) {
+                if (!firebase_common_1.firebase._gIDAuthentication) {
                     reject("Not currently logged in with Google");
                     return;
                 }
-                authCredential = com.google.firebase.auth.GoogleAuthProvider.getCredential(firebase_common_1.firebase._googleSignInIdToken, null);
+                authCredential = FIRGoogleAuthProvider.credentialWithIDTokenAccessToken(firebase_common_1.firebase._gIDAuthentication.idToken, firebase_common_1.firebase._gIDAuthentication.accessToken);
             }
             else if (arg.type === firebase_common_1.firebase.LoginType.FACEBOOK) {
-                if (!firebase_common_1.firebase._facebookAccessToken) {
+                var currentAccessToken = FBSDKAccessToken.currentAccessToken();
+                if (!currentAccessToken) {
                     reject("Not currently logged in with Facebook");
                     return;
                 }
-                authCredential = com.google.firebase.auth.FacebookAuthProvider.getCredential(firebase_common_1.firebase._facebookAccessToken);
+                authCredential = FIRFacebookAuthProvider.credentialWithAccessToken(currentAccessToken.tokenString);
             }
             if (authCredential === null) {
                 reject("arg.type should be one of LoginType.PASSWORD | LoginType.GOOGLE | LoginType.FACEBOOK");
                 return;
             }
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (task.isSuccessful()) {
-                        resolve();
-                    }
-                    else {
-                        reject("Reathentication failed");
-                    }
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
                 }
-            });
-            user.reauthenticate(authCredential).addOnCompleteListener(onCompleteListener);
+                else {
+                    resolve();
+                }
+            };
+            user.reauthenticateWithCredentialCompletion(authCredential, onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.reauthenticate: " + ex);
@@ -2256,24 +2346,23 @@ firebase_common_1.firebase.reauthenticate = function (arg) {
 firebase_common_1.firebase.reloadUser = function () {
     return new Promise(function (resolve, reject) {
         try {
-            var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+            var user = FIRAuth.auth().currentUser;
             if (user === null) {
                 reject("no current user");
                 return;
             }
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (task.isSuccessful()) {
-                        resolve();
-                    }
-                    else {
-                        reject("Reload failed " + task.getException());
-                    }
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
                 }
-            });
-            user.reload().addOnCompleteListener(onCompleteListener);
+                else {
+                    resolve();
+                }
+            };
+            user.reloadWithCompletion(onCompletion);
         }
         catch (ex) {
+            console.log("Error in firebase.reloadUser: " + ex);
             reject(ex);
         }
     });
@@ -2281,22 +2370,19 @@ firebase_common_1.firebase.reloadUser = function () {
 firebase_common_1.firebase.resetPassword = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
+            };
             if (!arg.email) {
                 reject("Resetting a password requires an email argument");
             }
             else {
-                var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                    onComplete: function (task) {
-                        if (task.isSuccessful()) {
-                            resolve();
-                        }
-                        else {
-                            reject("Sending password reset email failed");
-                        }
-                    }
-                });
-                var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-                firebaseAuth.sendPasswordResetEmail(arg.email).addOnCompleteListener(onCompleteListener);
+                FIRAuth.auth().sendPasswordResetWithEmailCompletion(arg.email, onCompletion);
             }
         }
         catch (ex) {
@@ -2308,27 +2394,24 @@ firebase_common_1.firebase.resetPassword = function (arg) {
 firebase_common_1.firebase.changePassword = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
+            };
             if (!arg.email || !arg.oldPassword || !arg.newPassword) {
                 reject("Changing a password requires an email and an oldPassword and a newPassword arguments");
             }
             else {
-                var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                    onComplete: function (task) {
-                        console.log("--- changed pwd: " + task);
-                        if (task.isSuccessful()) {
-                            resolve();
-                        }
-                        else {
-                            reject("Updating password failed");
-                        }
-                    }
-                });
-                var user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+                var user = FIRAuth.auth().currentUser;
                 if (user === null) {
                     reject("no current user");
                 }
                 else {
-                    user.updatePassword(arg.newPassword).addOnCompleteListener(onCompleteListener);
+                    user.updatePasswordCompletion(arg.newPassword, onCompletion);
                 }
             }
         }
@@ -2341,23 +2424,21 @@ firebase_common_1.firebase.changePassword = function (arg) {
 firebase_common_1.firebase.createUser = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (user, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve({
+                        key: user.uid
+                    });
+                }
+            };
             if (!arg.email || !arg.password) {
                 reject("Creating a user requires an email and password argument");
             }
             else {
-                var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-                var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                    onComplete: function (task) {
-                        if (!task.isSuccessful()) {
-                            reject("Creating a user failed. " + (task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                        }
-                        else {
-                            var user = task.getResult().getUser();
-                            resolve({ key: user.getUid() });
-                        }
-                    }
-                });
-                firebaseAuth.createUserWithEmailAndPassword(arg.email, arg.password).addOnCompleteListener(onCompleteListener);
+                FIRAuth.auth().createUserWithEmailPasswordCompletion(arg.email, arg.password, onCompletion);
             }
         }
         catch (ex) {
@@ -2369,23 +2450,20 @@ firebase_common_1.firebase.createUser = function (arg) {
 firebase_common_1.firebase.deleteUser = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-            var user = firebaseAuth.getCurrentUser();
+            var user = FIRAuth.auth().currentUser;
             if (user === null) {
                 reject("no current user");
                 return;
             }
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        reject("Deleting a user failed. " + (task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                    }
-                    else {
-                        resolve();
-                    }
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
                 }
-            });
-            user.delete().addOnCompleteListener(onCompleteListener);
+                else {
+                    resolve();
+                }
+            };
+            user.deleteWithCompletion(onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.deleteUser: " + ex);
@@ -2396,33 +2474,33 @@ firebase_common_1.firebase.deleteUser = function (arg) {
 firebase_common_1.firebase.updateProfile = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
+            };
+            var fAuth = FIRAuth.auth();
+            if (fAuth === null) {
+                reject("Run init() first!");
+                return;
+            }
             if (!arg.displayName && !arg.photoURL) {
                 reject("Updating a profile requires a displayName and / or a photoURL argument");
             }
             else {
-                var firebaseAuth = com.google.firebase.auth.FirebaseAuth.getInstance();
-                var user = firebaseAuth.getCurrentUser();
-                if (user === null) {
-                    reject("No current user");
-                    return;
+                var user = fAuth.currentUser;
+                if (user) {
+                    var changeRequest = user.profileChangeRequest();
+                    changeRequest.displayName = arg.displayName;
+                    changeRequest.photoURL = NSURL.URLWithString(arg.photoURL);
+                    changeRequest.commitChangesWithCompletion(onCompletion);
                 }
-                var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                    onComplete: function (task) {
-                        if (task.isSuccessful()) {
-                            resolve();
-                        }
-                        else {
-                            reject("Updating a profile failed. " + (task.getException() && task.getException().getReason ? task.getException().getReason() : task.getException()));
-                        }
-                    }
-                });
-                var profileUpdateBuilder = new com.google.firebase.auth.UserProfileChangeRequest.Builder();
-                if (arg.displayName)
-                    profileUpdateBuilder.setDisplayName(arg.displayName);
-                if (arg.photoURL)
-                    profileUpdateBuilder.setPhotoUri(android.net.Uri.parse(arg.photoURL));
-                var profileUpdate = profileUpdateBuilder.build();
-                user.updateProfile(profileUpdate).addOnCompleteListener(onCompleteListener);
+                else {
+                    reject();
+                }
             }
         }
         catch (ex) {
@@ -2431,14 +2509,26 @@ firebase_common_1.firebase.updateProfile = function (arg) {
         }
     });
 };
+firebase_common_1.firebase._addObservers = function (to, updateCallback) {
+    var listeners = [];
+    listeners.push(to.observeEventTypeWithBlock(0, function (snapshot) {
+        updateCallback(firebase_common_1.firebase.getCallbackData('ChildAdded', snapshot));
+    }));
+    listeners.push(to.observeEventTypeWithBlock(1, function (snapshot) {
+        updateCallback(firebase_common_1.firebase.getCallbackData('ChildRemoved', snapshot));
+    }));
+    listeners.push(to.observeEventTypeWithBlock(2, function (snapshot) {
+        updateCallback(firebase_common_1.firebase.getCallbackData('ChildChanged', snapshot));
+    }));
+    listeners.push(to.observeEventTypeWithBlock(3, function (snapshot) {
+        updateCallback(firebase_common_1.firebase.getCallbackData('ChildMoved', snapshot));
+    }));
+    return listeners;
+};
 firebase_common_1.firebase.keepInSync = function (path, switchOn) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            var where = firebase_common_1.firebase.instance.child(path);
+            var where = firebase_common_1.firebase.instance.childByAppendingPath(path);
             where.keepSynced(switchOn);
             resolve();
         }
@@ -2448,39 +2538,13 @@ firebase_common_1.firebase.keepInSync = function (path, switchOn) {
         }
     });
 };
-firebase_common_1.firebase._addObservers = function (to, updateCallback) {
-    var listener = new com.google.firebase.database.ChildEventListener({
-        onCancelled: function (error) {
-            updateCallback({
-                type: 'Cancelled'
-            });
-        },
-        onChildAdded: function (snapshot, previousChildKey) {
-            updateCallback(firebase_common_1.firebase.getCallbackData('ChildAdded', snapshot));
-        },
-        onChildRemoved: function (snapshot) {
-            updateCallback(firebase_common_1.firebase.getCallbackData('ChildRemoved', snapshot));
-        },
-        onChildChanged: function (snapshot, previousChildKey) {
-            updateCallback(firebase_common_1.firebase.getCallbackData('ChildChanged', snapshot));
-        },
-        onChildMoved: function (snapshot, previousChildKey) {
-            updateCallback(firebase_common_1.firebase.getCallbackData('ChildMoved', snapshot));
-        }
-    });
-    to.addChildEventListener(listener);
-    return listener;
-};
 firebase_common_1.firebase.addChildEventListener = function (updateCallback, path) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
+            var where = path === undefined ? firebase_common_1.firebase.instance : firebase_common_1.firebase.instance.childByAppendingPath(path);
             resolve({
                 path: path,
-                listeners: [firebase_common_1.firebase._addObservers(firebase_common_1.firebase.instance.child(path), updateCallback)]
+                listeners: firebase_common_1.firebase._addObservers(where, updateCallback)
             });
         }
         catch (ex) {
@@ -2492,28 +2556,21 @@ firebase_common_1.firebase.addChildEventListener = function (updateCallback, pat
 firebase_common_1.firebase.addValueEventListener = function (updateCallback, path) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            var listener = new com.google.firebase.database.ValueEventListener({
-                onDataChange: function (snapshot) {
-                    updateCallback(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
-                },
-                onCancelled: function (databaseError) {
-                    updateCallback({
-                        error: databaseError.getMessage()
-                    });
-                }
+            var where = path === undefined ? firebase_common_1.firebase.instance : firebase_common_1.firebase.instance.childByAppendingPath(path);
+            var listener = where.observeEventTypeWithBlockWithCancelBlock(4, function (snapshot) {
+                updateCallback(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
+            }, function (firebaseError) {
+                updateCallback({
+                    error: firebaseError.localizedDescription
+                });
             });
-            firebase_common_1.firebase.instance.child(path).addValueEventListener(listener);
             resolve({
                 path: path,
                 listeners: [listener]
             });
         }
         catch (ex) {
-            console.log("Error in firebase.addValueEventListener: " + ex);
+            console.log("Error in firebase.addChildEventListener: " + ex);
             reject(ex);
         }
     });
@@ -2521,19 +2578,12 @@ firebase_common_1.firebase.addValueEventListener = function (updateCallback, pat
 firebase_common_1.firebase.getValue = function (path) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            var listener = new com.google.firebase.database.ValueEventListener({
-                onDataChange: function (snapshot) {
-                    resolve(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
-                },
-                onCancelled: function (databaseError) {
-                    reject(databaseError.getMessage());
-                }
+            var where = path === undefined ? firebase_common_1.firebase.instance : firebase_common_1.firebase.instance.childByAppendingPath(path);
+            var listener = where.observeSingleEventOfTypeWithBlockWithCancelBlock(4, function (snapshot) {
+                resolve(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
+            }, function (firebaseError) {
+                reject(firebaseError.localizedDescription);
             });
-            firebase_common_1.firebase.instance.child(path).addListenerForSingleValueEvent(listener);
         }
         catch (ex) {
             console.log("Error in firebase.getValue: " + ex);
@@ -2544,15 +2594,10 @@ firebase_common_1.firebase.getValue = function (path) {
 firebase_common_1.firebase.removeEventListeners = function (listeners, path) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            var ref = firebase_common_1.firebase.instance.child(path);
+            var where = path === undefined ? firebase_common_1.firebase.instance : firebase_common_1.firebase.instance.childByAppendingPath(path);
             for (var i = 0; i < listeners.length; i++) {
                 var listener = listeners[i];
-                console.log("Removing listener at path " + path + ": " + listener);
-                ref.removeEventListener(listener);
+                where.removeObserverWithHandle(listener);
             }
             resolve();
         }
@@ -2565,14 +2610,10 @@ firebase_common_1.firebase.removeEventListeners = function (listeners, path) {
 firebase_common_1.firebase.push = function (path, val) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            var pushInstance = firebase_common_1.firebase.instance.child(path).push();
-            pushInstance.setValue(firebase_common_1.firebase.toValue(val));
+            var ref = firebase_common_1.firebase.instance.childByAppendingPath(path).childByAutoId();
+            ref.setValue(val);
             resolve({
-                key: pushInstance.getKey()
+                key: ref.key
             });
         }
         catch (ex) {
@@ -2584,11 +2625,7 @@ firebase_common_1.firebase.push = function (path, val) {
 firebase_common_1.firebase.setValue = function (path, val) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            firebase_common_1.firebase.instance.child(path).setValue(firebase_common_1.firebase.toValue(val));
+            firebase_common_1.firebase.instance.childByAppendingPath(path).setValue(val);
             resolve();
         }
         catch (ex) {
@@ -2600,19 +2637,15 @@ firebase_common_1.firebase.setValue = function (path, val) {
 firebase_common_1.firebase.update = function (path, val) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
             if (typeof val === "object") {
-                firebase_common_1.firebase.instance.child(path).updateChildren(firebase_common_1.firebase.toHashMap(val));
+                firebase_common_1.firebase.instance.childByAppendingPath(path).updateChildValues(val);
             }
             else {
                 var lastPartOfPath = path.lastIndexOf("/");
                 var pathPrefix = path.substring(0, lastPartOfPath);
                 var pathSuffix = path.substring(lastPartOfPath + 1);
                 var updateObject = '{"' + pathSuffix + '" : "' + val + '"}';
-                firebase_common_1.firebase.instance.child(pathPrefix).updateChildren(firebase_common_1.firebase.toHashMap(JSON.parse(updateObject)));
+                firebase_common_1.firebase.instance.childByAppendingPath(pathPrefix).updateChildValues(JSON.parse(updateObject));
             }
             resolve();
         }
@@ -2625,26 +2658,23 @@ firebase_common_1.firebase.update = function (path, val) {
 firebase_common_1.firebase.query = function (updateCallback, path, options) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
+            var where = path === undefined ? firebase_common_1.firebase.instance : firebase_common_1.firebase.instance.childByAppendingPath(path);
             var query = void 0;
             if (options.orderBy.type === firebase_common_1.firebase.QueryOrderByType.KEY) {
-                query = firebase_common_1.firebase.instance.child(path).orderByKey();
+                query = where.queryOrderedByKey();
             }
             else if (options.orderBy.type === firebase_common_1.firebase.QueryOrderByType.VALUE) {
-                query = firebase_common_1.firebase.instance.child(path).orderByValue();
+                query = where.queryOrderedByValue();
             }
             else if (options.orderBy.type === firebase_common_1.firebase.QueryOrderByType.PRIORITY) {
-                query = firebase_common_1.firebase.instance.child(path).orderByPriority();
+                query = where.queryOrderedByPriority();
             }
             else if (options.orderBy.type === firebase_common_1.firebase.QueryOrderByType.CHILD) {
                 if (options.orderBy.value === undefined || options.orderBy.value === null) {
                     reject("When orderBy.type is 'child' you must set orderBy.value as well.");
                     return;
                 }
-                query = firebase_common_1.firebase.instance.child(path).orderByChild(options.orderBy.value);
+                query = where.queryOrderedByChild(options.orderBy.value);
             }
             else {
                 reject("Invalid orderBy.type, use constants like firebase.QueryOrderByType.VALUE");
@@ -2652,13 +2682,13 @@ firebase_common_1.firebase.query = function (updateCallback, path, options) {
             }
             if (options.range && options.range.type) {
                 if (options.range.type === firebase_common_1.firebase.QueryRangeType.START_AT) {
-                    query = query.startAt(options.range.value);
+                    query = query.queryStartingAtValue(options.range.value);
                 }
                 else if (options.range.type === firebase_common_1.firebase.QueryRangeType.END_AT) {
-                    query = query.endAt(options.range.value);
+                    query = query.queryEndingAtValue(options.range.value);
                 }
                 else if (options.range.type === firebase_common_1.firebase.QueryRangeType.EQUAL_TO) {
-                    query = query.equalTo(options.range.value);
+                    query = query.queryEqualToValue(options.range.value);
                 }
                 else {
                     reject("Invalid range.type, use constants like firebase.QueryRangeType.START_AT");
@@ -2673,13 +2703,13 @@ firebase_common_1.firebase.query = function (updateCallback, path, options) {
                         return;
                     }
                     if (range.type === firebase_common_1.firebase.QueryRangeType.START_AT) {
-                        query = query.startAt(range.value);
+                        query = query.queryStartingAtValue(range.value);
                     }
                     else if (range.type === firebase_common_1.firebase.QueryRangeType.END_AT) {
-                        query = query.endAt(range.value);
+                        query = query.queryEndingAtValue(range.value);
                     }
                     else if (range.type === firebase_common_1.firebase.QueryRangeType.EQUAL_TO) {
-                        query = query.equalTo(range.value);
+                        query = query.queryEqualToValue(range.value);
                     }
                     else {
                         reject("Invalid ranges[" + i + "].type, use constants like firebase.QueryRangeType.START_AT");
@@ -2693,40 +2723,27 @@ firebase_common_1.firebase.query = function (updateCallback, path, options) {
                     return;
                 }
                 if (options.limit.type === firebase_common_1.firebase.QueryLimitType.FIRST) {
-                    query = query.limitToFirst(options.limit.value);
+                    query = query.queryLimitedToFirst(options.limit.value);
                 }
                 else if (options.limit.type === firebase_common_1.firebase.QueryLimitType.LAST) {
-                    query = query.limitToLast(options.limit.value);
+                    query = query.queryLimitedToLast(options.limit.value);
                 }
                 else {
-                    reject("Invalid limit.type, use constants like firebase.QueryLimitType.FIRST");
+                    reject("Invalid limit.type, use constants like firebase.queryOptions.limitType.FIRST");
                     return;
                 }
             }
             if (options.singleEvent) {
-                var listener = new com.google.firebase.database.ValueEventListener({
-                    onDataChange: function (snapshot) {
-                        var data = firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot);
-                        if (updateCallback)
-                            updateCallback(data);
-                        resolve(data);
-                    },
-                    onCancelled: function (databaseError) {
-                        if (updateCallback)
-                            updateCallback({
-                                error: databaseError.getMessage()
-                            });
-                        resolve({
-                            error: databaseError.getMessage()
-                        });
-                    }
+                query.observeSingleEventOfTypeWithBlock(4, function (snapshot) {
+                    if (updateCallback)
+                        updateCallback(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
+                    resolve(firebase_common_1.firebase.getCallbackData('ValueChanged', snapshot));
                 });
-                query.addListenerForSingleValueEvent(listener);
             }
             else {
                 resolve({
                     path: path,
-                    listeners: [firebase_common_1.firebase._addObservers(query, updateCallback)]
+                    listeners: firebase_common_1.firebase._addObservers(query, updateCallback)
                 });
             }
         }
@@ -2739,11 +2756,7 @@ firebase_common_1.firebase.query = function (updateCallback, path, options) {
 firebase_common_1.firebase.remove = function (path) {
     return new Promise(function (resolve, reject) {
         try {
-            if (firebase_common_1.firebase.instance === null) {
-                reject("Run init() first!");
-                return;
-            }
-            firebase_common_1.firebase.instance.child(path).setValue(null);
+            firebase_common_1.firebase.instance.childByAppendingPath(path).setValue(null);
             resolve();
         }
         catch (ex) {
@@ -2753,78 +2766,64 @@ firebase_common_1.firebase.remove = function (path) {
     });
 };
 function getStorageRef(reject, arg) {
-    if (typeof (com.google.firebase.storage) === "undefined") {
-        reject("Uncomment firebase-storage in the plugin's include.gradle first");
+    if (typeof (FIRStorage) === "undefined") {
+        reject("Uncomment Storage in the plugin's Podfile first");
         return;
     }
     if (!arg.remoteFullPath) {
         reject("remoteFullPath is mandatory");
         return;
     }
-    return arg.bucket ? com.google.firebase.storage.FirebaseStorage.getInstance().getReferenceFromUrl(arg.bucket) : firebase_common_1.firebase.storage;
+    return arg.bucket ? FIRStorage.storage().referenceForURL(arg.bucket) : firebase_common_1.firebase.storage;
 }
 firebase_common_1.firebase.uploadFile = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (metadata, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve({
+                        name: metadata.name,
+                        url: metadata.downloadURL() ? metadata.downloadURL().absoluteString : null,
+                        contentType: metadata.contentType,
+                        created: metadata.timeCreated,
+                        updated: metadata.updated,
+                        bucket: metadata.bucket,
+                        size: metadata.size
+                    });
+                }
+            };
             var storageRef = getStorageRef(reject, arg);
             if (!storageRef) {
                 return;
             }
-            var storageReference = storageRef.child(arg.remoteFullPath);
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function (uploadTaskSnapshot) {
-                    var metadata = uploadTaskSnapshot.getMetadata();
-                    resolve({
-                        name: metadata.getName(),
-                        contentType: metadata.getContentType(),
-                        created: new Date(metadata.getCreationTimeMillis()),
-                        updated: new Date(metadata.getUpdatedTimeMillis()),
-                        bucket: metadata.getBucket(),
-                        size: metadata.getSizeBytes(),
-                        url: metadata.getDownloadUrl().toString()
-                    });
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject("Upload failed. " + exception);
-                }
-            });
-            var onProgressListener = new com.google.firebase.storage.OnProgressListener({
-                onProgress: function (snapshot) {
-                    if (typeof (arg.onProgress) === "function") {
-                        var fractionCompleted = snapshot.getBytesTransferred() / snapshot.getTotalByteCount();
-                        arg.onProgress({
-                            fractionCompleted: fractionCompleted,
-                            percentageCompleted: Math.round(fractionCompleted * 100)
-                        });
-                    }
-                }
-            });
+            var fIRStorageReference = storageRef.child(arg.remoteFullPath);
+            var fIRStorageUploadTask = null;
             if (arg.localFile) {
                 if (typeof (arg.localFile) !== "object") {
                     reject("localFile argument must be a File object; use file-system module to create one");
                     return;
                 }
-                var localFileUrl = android.net.Uri.fromFile(new java.io.File(arg.localFile.path));
-                var uploadFileTask = storageReference.putFile(localFileUrl)
-                    .addOnFailureListener(onFailureListener)
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnProgressListener(onProgressListener);
+                fIRStorageUploadTask = fIRStorageReference.putFileMetadataCompletion(NSURL.fileURLWithPath(arg.localFile.path), null, onCompletion);
             }
             else if (arg.localFullPath) {
-                if (!fs.File.exists(arg.localFullPath)) {
-                    reject("File does not exist: " + arg.localFullPath);
-                    return;
-                }
-                var localFileUrl = android.net.Uri.fromFile(new java.io.File(arg.localFullPath));
-                var uploadFileTask = storageReference.putFile(localFileUrl)
-                    .addOnFailureListener(onFailureListener)
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnProgressListener(onProgressListener);
+                fIRStorageUploadTask = fIRStorageReference.putFileMetadataCompletion(NSURL.fileURLWithPath(arg.localFullPath), null, onCompletion);
             }
             else {
                 reject("One of localFile or localFullPath is required");
+                return;
+            }
+            if (fIRStorageUploadTask !== null) {
+                var fIRStorageHandle = fIRStorageUploadTask.observeStatusHandler(2, function (snapshot) {
+                    if (!snapshot.error && typeof (arg.onProgress) === "function") {
+                        arg.onProgress({
+                            fractionCompleted: snapshot.progress.fractionCompleted,
+                            percentageCompleted: Math.round(snapshot.progress.fractionCompleted * 100)
+                        });
+                    }
+                });
             }
         }
         catch (ex) {
@@ -2836,21 +2835,19 @@ firebase_common_1.firebase.uploadFile = function (arg) {
 firebase_common_1.firebase.downloadFile = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (url, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve(url.absoluteString);
+                }
+            };
             var storageRef = getStorageRef(reject, arg);
             if (!storageRef) {
                 return;
             }
-            var storageReference = storageRef.child(arg.remoteFullPath);
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function (downloadTaskSnapshot) {
-                    resolve();
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject("Download failed. " + exception);
-                }
-            });
+            var fIRStorageReference = storageRef.child(arg.remoteFullPath);
             var localFilePath = void 0;
             if (arg.localFile) {
                 if (typeof (arg.localFile) !== "object") {
@@ -2866,10 +2863,8 @@ firebase_common_1.firebase.downloadFile = function (arg) {
                 reject("One of localFile or localFullPath is required");
                 return;
             }
-            var file = new java.io.File(localFilePath);
-            storageReference.getFile(file)
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
+            var localFileUrl = NSURL.fileURLWithPath(localFilePath);
+            var fIRStorageDownloadTask = fIRStorageReference.writeToFileCompletion(localFileUrl, onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.downloadFile: " + ex);
@@ -2880,24 +2875,20 @@ firebase_common_1.firebase.downloadFile = function (arg) {
 firebase_common_1.firebase.getDownloadUrl = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (url, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve(url.absoluteString);
+                }
+            };
             var storageRef = getStorageRef(reject, arg);
             if (!storageRef) {
                 return;
             }
-            var storageReference = storageRef.child(arg.remoteFullPath);
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function (uri) {
-                    resolve(uri.toString());
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject(exception.getMessage());
-                }
-            });
-            storageReference.getDownloadUrl()
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
+            var fIRStorageReference = storageRef.child(arg.remoteFullPath);
+            fIRStorageReference.downloadURLWithCompletion(onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.getDownloadUrl: " + ex);
@@ -2908,24 +2899,20 @@ firebase_common_1.firebase.getDownloadUrl = function (arg) {
 firebase_common_1.firebase.deleteFile = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
+            var onCompletion = function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
+            };
             var storageRef = getStorageRef(reject, arg);
             if (!storageRef) {
                 return;
             }
-            var storageReference = storageRef.child(arg.remoteFullPath);
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function () {
-                    resolve();
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject(exception.getMessage());
-                }
-            });
-            storageReference.delete()
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
+            var fIRStorageFileRef = storageRef.child(arg.remoteFullPath);
+            fIRStorageFileRef.deleteWithCompletion(onCompletion);
         }
         catch (ex) {
             console.log("Error in firebase.deleteFile: " + ex);
@@ -2936,11 +2923,14 @@ firebase_common_1.firebase.deleteFile = function (arg) {
 firebase_common_1.firebase.subscribeToTopic = function (topicName) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.messaging) === "undefined") {
-                reject("Uncomment firebase-messaging in the plugin's include.gradle first");
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
                 return;
             }
-            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic(topicName);
+            if (topicName.indexOf("/topics/") === -1) {
+                topicName = "/topics/" + topicName;
+            }
+            FIRMessaging.messaging().subscribeToTopic(topicName);
             resolve();
         }
         catch (ex) {
@@ -2952,11 +2942,14 @@ firebase_common_1.firebase.subscribeToTopic = function (topicName) {
 firebase_common_1.firebase.unsubscribeFromTopic = function (topicName) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.messaging) === "undefined") {
-                reject("Uncomment firebase-messaging in the plugin's include.gradle first");
+            if (typeof (FIRMessaging) === "undefined") {
+                reject("Enable FIRMessaging in Podfile first");
                 return;
             }
-            com.google.firebase.messaging.FirebaseMessaging.getInstance().unsubscribeFromTopic(topicName);
+            if (topicName.indexOf("/topics/") === -1) {
+                topicName = "/topics/" + topicName;
+            }
+            FIRMessaging.messaging().unsubscribeFromTopic(topicName);
             resolve();
         }
         catch (ex) {
@@ -2968,15 +2961,6 @@ firebase_common_1.firebase.unsubscribeFromTopic = function (topicName) {
 firebase_common_1.firebase.sendCrashLog = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.crash) === "undefined") {
-                reject("Make sure firebase-crash is in the plugin's include.gradle");
-                return;
-            }
-            if (!arg.message) {
-                reject("The mandatory 'message' argument is missing");
-                return;
-            }
-            com.google.firebase.crash.FirebaseCrash.log(arg.message);
             resolve();
         }
         catch (ex) {
@@ -2988,53 +2972,48 @@ firebase_common_1.firebase.sendCrashLog = function (arg) {
 firebase_common_1.firebase.invites.sendInvitation = function (arg) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.android.gms.appinvite) === "undefined") {
-                reject("Make sure firebase-invites is in the plugin's include.gradle");
+            if (typeof (FIRInvites) === "undefined") {
+                reject("Make sure 'Firebase/Invites' is in the plugin's Podfile");
                 return;
             }
             if (!arg.message || !arg.title) {
                 reject("The mandatory 'message' or 'title' argument is missing");
                 return;
             }
-            var builder = new com.google.android.gms.appinvite.AppInviteInvitation.IntentBuilder(arg.title).setMessage(arg.message);
+            var inviteDialog = FIRInvites.inviteDialog();
+            inviteDialog.performSelectorWithObject("setMessage:", arg.message);
+            inviteDialog.performSelectorWithObject("setTitle:", arg.title);
             if (arg.deepLink) {
-                builder.setDeepLink(android.net.Uri.parse(arg.deepLink));
+                inviteDialog.performSelectorWithObject("setDeepLink:", arg.deeplink);
             }
             if (arg.callToActionText) {
-                builder.setCallToActionText(arg.callToActionText);
+                inviteDialog.performSelectorWithObject("setCallToActionText:", arg.callToActionText);
             }
             if (arg.customImage) {
-                builder.setCustomImage(android.net.Uri.parse(arg.customImage));
+                inviteDialog.performSelectorWithObject("setCustomImage:", arg.customImage);
             }
-            if (arg.iosClientID) {
-                builder.setOtherPlatformsTargetApplication(com.google.android.gms.appinvite.AppInviteInvitation.IntentBuilder.PlatformMode.PROJECT_PLATFORM_IOS, arg.iosClientID);
+            if (arg.androidClientID) {
+                var targetApplication = FIRInvitesTargetApplication.new();
+                targetApplication.androidClientID = arg.androidClientID;
+                inviteDialog.performSelectorWithObject("setOtherPlatformsTargetApplication:", targetApplication);
             }
-            var firebaseInviteIntent = builder.build();
-            appModule.android.foregroundActivity.startActivityForResult(firebaseInviteIntent, REQUEST_INVITE_INTENT_ID);
-            appModule.android.on(appModule.AndroidApplication.activityResultEvent, function (eventData) {
-                if (eventData.requestCode === REQUEST_INVITE_INTENT_ID) {
-                    if (eventData.resultCode === android.app.Activity.RESULT_OK) {
-                        var ids = com.google.android.gms.appinvite.AppInviteInvitation.getInvitationIds(eventData.resultCode, eventData.intent);
-                        try {
-                            resolve({
-                                count: ids.length,
-                                invitationIds: firebase_common_1.firebase.toJsObject(ids)
-                            });
-                        }
-                        catch (e) {
-                            reject(e);
-                        }
-                    }
-                    else {
-                        if (eventData.resultCode === 3) {
-                            reject("Resultcode 3, see http://stackoverflow.com/questions/37883664/result-code-3-when-implementing-appinvites");
-                        }
-                        else {
-                            reject("Resultcode: " + eventData.resultCode);
-                        }
-                    }
+            var delegate_3 = FIRInviteDelegateImpl.new().initWithCallback(function (invitationIds, error) {
+                if (error === null) {
+                    var ids = firebase_common_1.firebase.toJsObject(invitationIds);
+                    resolve({
+                        count: invitationIds.count,
+                        invitationIds: ids
+                    });
                 }
+                else {
+                    reject(error.localizedDescription);
+                }
+                CFRelease(delegate_3);
+                delegate_3 = undefined;
             });
+            CFRetain(delegate_3);
+            inviteDialog.performSelectorWithObject("setInviteDelegate:", delegate_3);
+            inviteDialog.performSelector("open");
         }
         catch (ex) {
             console.log("Error in firebase.sendInvitation: " + ex);
@@ -3045,43 +3024,17 @@ firebase_common_1.firebase.invites.sendInvitation = function (arg) {
 firebase_common_1.firebase.invites.getInvitation = function () {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.android.gms.appinvite) === "undefined") {
-                reject("Make sure firebase-invites is in the plugin's include.gradle");
+            if (typeof (FIRInvites) === "undefined") {
+                reject("Make sure 'Firebase/Invites' is in the plugin's Podfile");
                 return;
             }
-            var onConnectionFailedListener = new com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener({
-                onConnectionFailed: function (connectionResult) {
-                }
-            });
-            firebase_common_1.firebase._mGoogleInviteApiClient = new com.google.android.gms.common.api.GoogleApiClient.Builder(com.tns.NativeScriptApplication.getInstance())
-                .addOnConnectionFailedListener(onConnectionFailedListener)
-                .addApi(com.google.android.gms.appinvite.AppInvite.API)
-                .build();
-            firebase_common_1.firebase._mGoogleInviteApiClient.connect();
-            var firebaseDynamicLinks = com.google.firebase.dynamiclinks.FirebaseDynamicLinks.getInstance();
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function (pendingDynamicLinkData) {
-                    if (pendingDynamicLinkData === null) {
-                        reject("Not launched by invitation");
-                        return;
-                    }
-                    var deepLinkUri = pendingDynamicLinkData.getLink();
-                    var firebaseAppInvite = com.google.firebase.appinvite.FirebaseAppInvite.getInvitation(pendingDynamicLinkData);
-                    resolve({
-                        deepLink: deepLinkUri === null ? null : deepLinkUri.toString(),
-                        matchType: deepLinkUri === null ? null : 1,
-                        invitationId: firebaseAppInvite.getInvitationId()
-                    });
-                }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject(exception.getMessage());
-                }
-            });
-            firebaseDynamicLinks.getDynamicLink(appModule.android.startActivity.getIntent())
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
+            if (firebase_common_1.firebase._cachedInvitation !== null) {
+                resolve(firebase_common_1.firebase._cachedInvitation);
+                firebase_common_1.firebase.cachedInvitation = null;
+            }
+            else {
+                reject("Not launched by invitation");
+            }
         }
         catch (ex) {
             console.log("Error in firebase.getInvitation: " + ex);
@@ -3091,21 +3044,20 @@ firebase_common_1.firebase.invites.getInvitation = function () {
 };
 firebase_common_1.firebase.firestore.collection = function (collectionPath) {
     try {
-        if (typeof (com.google.firebase.firestore) === "undefined") {
-            console.log("Make sure firebase-firestore is in the plugin's include.gradle");
+        if (typeof (FIRFirestore) === "undefined") {
+            console.log("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
             return null;
         }
-        var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-        var collectionRef_1 = db.collection(collectionPath);
+        var fIRCollectionReference_1 = FIRFirestore.firestore().collectionWithPath(collectionPath);
         return {
-            id: collectionRef_1.getId(),
+            id: fIRCollectionReference_1.collectionID,
             doc: function (documentPath) { return firebase_common_1.firebase.firestore.doc(collectionPath, documentPath); },
             add: function (document) { return firebase_common_1.firebase.firestore.add(collectionPath, document); },
             get: function () { return firebase_common_1.firebase.firestore.get(collectionPath); },
             where: function (fieldPath, opStr, value) { return firebase_common_1.firebase.firestore.where(collectionPath, fieldPath, opStr, value); },
-            orderBy: function (fieldPath, directionStr) { return firebase_common_1.firebase.firestore.orderBy(collectionPath, fieldPath, directionStr, collectionRef_1); },
-            limit: function (limit) { return firebase_common_1.firebase.firestore.limit(collectionPath, limit, collectionRef_1); },
-            onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onCollectionSnapshot(collectionRef_1, callback); }
+            orderBy: function (fieldPath, directionStr) { return firebase_common_1.firebase.firestore.orderBy(collectionPath, fieldPath, directionStr, fIRCollectionReference_1); },
+            limit: function (limit) { return firebase_common_1.firebase.firestore.limit(collectionPath, limit, fIRCollectionReference_1); },
+            onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onCollectionSnapshot(fIRCollectionReference_1, callback); }
         };
     }
     catch (ex) {
@@ -3114,59 +3066,64 @@ firebase_common_1.firebase.firestore.collection = function (collectionPath) {
     }
 };
 firebase_common_1.firebase.firestore.onDocumentSnapshot = function (docRef, callback) {
-    var listener = docRef.addSnapshotListener(new com.google.firebase.firestore.EventListener({
-        onEvent: (function (snapshot, exception) {
-            if (exception !== null) {
-                return;
-            }
-            callback(new firebase_common_1.DocumentSnapshot(snapshot ? snapshot.getId() : null, snapshot.exists(), snapshot ? function () { return firebase_common_1.firebase.toJsObject(snapshot.getData()); } : null));
-        })
-    }));
-    return function () { return listener.remove(); };
+    var listener = docRef.addSnapshotListener(function (snapshot, error) {
+        callback(new firebase_common_1.DocumentSnapshot(snapshot ? snapshot.documentID : null, !!snapshot, snapshot ? function () { return firebase_common_1.firebase.toJsObject(snapshot.data()); } : null));
+    });
+    if (listener.remove === undefined) {
+        return function () {
+            callback = function () {
+            };
+        };
+    }
+    else {
+        return function () { return listener.remove(); };
+    }
 };
 firebase_common_1.firebase.firestore.onCollectionSnapshot = function (colRef, callback) {
-    var listener = colRef.addSnapshotListener(new com.google.firebase.firestore.EventListener({
-        onEvent: (function (snapshot, exception) {
-            if (exception !== null) {
-                return;
-            }
-            var docSnapshots = [];
-            var _loop_1 = function (i) {
-                var documentSnapshot = snapshot.getDocuments().get(i);
-                docSnapshots.push(new firebase_common_1.DocumentSnapshot(documentSnapshot.getId(), true, function () { return firebase_common_1.firebase.toJsObject(documentSnapshot.getData()); }));
+    var listener = colRef.addSnapshotListener(function (snapshot, error) {
+        var docSnapshots = [];
+        var _loop_1 = function (i, l) {
+            var document_1 = snapshot.documents.objectAtIndex(i);
+            docSnapshots.push(new firebase_common_1.DocumentSnapshot(document_1.documentID, true, function () { return firebase_common_1.firebase.toJsObject(document_1.data()); }));
+        };
+        for (var i = 0, l = snapshot.documents.count; i < l; i++) {
+            _loop_1(i, l);
+        }
+        var snap = new firebase_common_1.QuerySnapshot();
+        snap.docSnapshots = docSnapshots;
+        callback(snap);
+    });
+    if (listener.remove === undefined) {
+        return function () {
+            callback = function () {
             };
-            for (var i = 0; i < snapshot.size(); i++) {
-                _loop_1(i);
-            }
-            var snap = new firebase_common_1.QuerySnapshot();
-            snap.docSnapshots = docSnapshots;
-            callback(snap);
-        })
-    }));
-    return function () { return listener.remove(); };
+        };
+    }
+    else {
+        return function () { return listener.remove(); };
+    }
 };
-firebase_common_1.firebase.firestore._getDocumentReference = function (javaObj, collectionPath, documentPath) {
+firebase_common_1.firebase.firestore._getDocumentReference = function (fIRDocumentReference, collectionPath, documentPath) {
     return {
-        id: javaObj.getId(),
+        id: fIRDocumentReference.documentID,
         collection: function (cp) { return firebase_common_1.firebase.firestore.collection(collectionPath + "/" + documentPath + "/" + cp); },
-        set: function (data, options) { return firebase_common_1.firebase.firestore.set(collectionPath, javaObj.getId(), data, options); },
-        get: function () { return firebase_common_1.firebase.firestore.getDocument(collectionPath, javaObj.getId()); },
-        update: function (data) { return firebase_common_1.firebase.firestore.update(collectionPath, javaObj.getId(), data); },
-        delete: function () { return firebase_common_1.firebase.firestore.delete(collectionPath, javaObj.getId()); },
-        onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onDocumentSnapshot(javaObj, callback); },
-        android: javaObj
+        set: function (data, options) { return firebase_common_1.firebase.firestore.set(collectionPath, fIRDocumentReference.documentID, data, options); },
+        get: function () { return firebase_common_1.firebase.firestore.getDocument(collectionPath, fIRDocumentReference.documentID); },
+        update: function (data) { return firebase_common_1.firebase.firestore.update(collectionPath, fIRDocumentReference.documentID, data); },
+        delete: function () { return firebase_common_1.firebase.firestore.delete(collectionPath, fIRDocumentReference.documentID); },
+        onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onDocumentSnapshot(fIRDocumentReference, callback); },
+        ios: fIRDocumentReference
     };
 };
 firebase_common_1.firebase.firestore.doc = function (collectionPath, documentPath) {
     try {
-        if (typeof (com.google.firebase.firestore) === "undefined") {
-            console.log("Make sure firebase-firestore is in the plugin's include.gradle");
+        if (typeof (FIRFirestore) === "undefined") {
+            console.log("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
             return null;
         }
-        var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-        var colRef = db.collection(collectionPath);
-        var docRef = documentPath ? colRef.document(documentPath) : colRef.document();
-        return firebase_common_1.firebase.firestore._getDocumentReference(docRef, collectionPath, documentPath);
+        var fIRCollectionReference = FIRFirestore.firestore().collectionWithPath(collectionPath);
+        var fIRDocumentReference = documentPath ? fIRCollectionReference.documentWithPath(documentPath) : fIRCollectionReference.documentWithAutoID();
+        return firebase_common_1.firebase.firestore._getDocumentReference(fIRDocumentReference, collectionPath, documentPath);
     }
     catch (ex) {
         console.log("Error in firebase.firestore.doc: " + ex);
@@ -3176,31 +3133,29 @@ firebase_common_1.firebase.firestore.doc = function (collectionPath, documentPat
 firebase_common_1.firebase.firestore.add = function (collectionPath, document) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function (docRef) {
+            var defaultFirestore = FIRFirestore.firestore();
+            var fIRDocumentReference_1 = defaultFirestore
+                .collectionWithPath(collectionPath)
+                .addDocumentWithDataCompletion(document, function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
                     resolve({
-                        id: docRef.getId(),
+                        id: fIRDocumentReference_1.documentID,
                         collection: function (cp) { return firebase_common_1.firebase.firestore.collection(cp); },
-                        set: function (data, options) { return firebase_common_1.firebase.firestore.set(collectionPath, docRef.getId(), data, options); },
-                        get: function () { return firebase_common_1.firebase.firestore.getDocument(collectionPath, docRef.getId()); },
-                        update: function (data) { return firebase_common_1.firebase.firestore.update(collectionPath, docRef.getId(), data); },
-                        delete: function () { return firebase_common_1.firebase.firestore.delete(collectionPath, docRef.getId()); },
-                        onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onDocumentSnapshot(docRef, callback); }
+                        set: function (data, options) { return firebase_common_1.firebase.firestore.set(collectionPath, fIRDocumentReference_1.documentID, data, options); },
+                        get: function () { return firebase_common_1.firebase.firestore.getDocument(collectionPath, fIRDocumentReference_1.documentID); },
+                        update: function (data) { return firebase_common_1.firebase.firestore.update(collectionPath, fIRDocumentReference_1.documentID, data); },
+                        delete: function () { return firebase_common_1.firebase.firestore.delete(collectionPath, fIRDocumentReference_1.documentID); },
+                        onSnapshot: function (callback) { return firebase_common_1.firebase.firestore.onDocumentSnapshot(fIRDocumentReference_1, callback); }
                     });
                 }
             });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) { return reject(exception.getMessage()); }
-            });
-            db.collection(collectionPath)
-                .add(firebase_common_1.firebase.toValue(document))
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
         }
         catch (ex) {
             console.log("Error in firebase.firestore.add: " + ex);
@@ -3211,29 +3166,32 @@ firebase_common_1.firebase.firestore.add = function (collectionPath, document) {
 firebase_common_1.firebase.firestore.set = function (collectionPath, documentPath, document, options) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function () { return resolve(); }
-            });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) { return reject(exception.getMessage()); }
-            });
-            var docRef = db.collection(collectionPath).document(documentPath);
+            var docRef = FIRFirestore.firestore()
+                .collectionWithPath(collectionPath)
+                .documentWithPath(documentPath);
             if (options && options.merge) {
-                docRef
-                    .set(firebase_common_1.firebase.toValue(document), com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnFailureListener(onFailureListener);
+                docRef.setDataOptionsCompletion(document, FIRSetOptions.merge(), function (error) {
+                    if (error) {
+                        reject(error.localizedDescription);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
             }
             else {
-                docRef
-                    .set(firebase_common_1.firebase.toValue(document))
-                    .addOnSuccessListener(onSuccessListener)
-                    .addOnFailureListener(onFailureListener);
+                docRef.setDataCompletion(document, function (error) {
+                    if (error) {
+                        reject(error.localizedDescription);
+                    }
+                    else {
+                        resolve();
+                    }
+                });
             }
         }
         catch (ex) {
@@ -3245,22 +3203,21 @@ firebase_common_1.firebase.firestore.set = function (collectionPath, documentPat
 firebase_common_1.firebase.firestore.update = function (collectionPath, documentPath, document) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function () { return resolve(); }
+            var docRef = FIRFirestore.firestore()
+                .collectionWithPath(collectionPath)
+                .documentWithPath(documentPath);
+            docRef.updateDataCompletion(document, function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
             });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) { return reject(exception.getMessage()); }
-            });
-            var docRef = db.collection(collectionPath).document(documentPath);
-            docRef
-                .update(firebase_common_1.firebase.toValue(document))
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
         }
         catch (ex) {
             console.log("Error in firebase.firestore.update: " + ex);
@@ -3271,22 +3228,21 @@ firebase_common_1.firebase.firestore.update = function (collectionPath, document
 firebase_common_1.firebase.firestore.delete = function (collectionPath, documentPath) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onSuccessListener = new com.google.android.gms.tasks.OnSuccessListener({
-                onSuccess: function () { return resolve(); }
+            var docRef = FIRFirestore.firestore()
+                .collectionWithPath(collectionPath)
+                .documentWithPath(documentPath);
+            docRef.deleteDocumentWithCompletion(function (error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    resolve();
+                }
             });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) { return reject(exception.getMessage()); }
-            });
-            var docRef = db.collection(collectionPath).document(documentPath);
-            docRef
-                .delete()
-                .addOnSuccessListener(onSuccessListener)
-                .addOnFailureListener(onFailureListener);
         }
         catch (ex) {
             console.log("Error in firebase.firestore.delete: " + ex);
@@ -3297,42 +3253,31 @@ firebase_common_1.firebase.firestore.delete = function (collectionPath, document
 firebase_common_1.firebase.firestore.getCollection = function (collectionPath) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        var ex = task.getException();
-                        reject(ex && ex.getReason ? ex.getReason() : ex);
+            var defaultFirestore = FIRFirestore.firestore();
+            var fIRDocumentReference = defaultFirestore
+                .collectionWithPath(collectionPath)
+                .getDocumentsWithCompletion(function (snapshot, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    var docSnapshots = [];
+                    var _loop_2 = function (i, l) {
+                        var document_2 = snapshot.documents.objectAtIndex(i);
+                        docSnapshots.push(new firebase_common_1.DocumentSnapshot(document_2.documentID, true, function () { return firebase_common_1.firebase.toJsObject(document_2.data()); }));
+                    };
+                    for (var i = 0, l = snapshot.documents.count; i < l; i++) {
+                        _loop_2(i, l);
                     }
-                    else {
-                        var result = task.getResult();
-                        var docSnapshots = [];
-                        var _loop_2 = function (i) {
-                            var documentSnapshot = result.getDocuments().get(i);
-                            docSnapshots.push(new firebase_common_1.DocumentSnapshot(documentSnapshot.getId(), true, function () { return firebase_common_1.firebase.toJsObject(documentSnapshot.getData()); }));
-                        };
-                        for (var i = 0; i < result.size(); i++) {
-                            _loop_2(i);
-                        }
-                        var snap = new firebase_common_1.QuerySnapshot();
-                        snap.docSnapshots = docSnapshots;
-                        resolve(snap);
-                    }
+                    var snap = new firebase_common_1.QuerySnapshot();
+                    snap.docSnapshots = docSnapshots;
+                    resolve(snap);
                 }
             });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject(exception.getMessage());
-                }
-            });
-            db.collection(collectionPath)
-                .get()
-                .addOnCompleteListener(onCompleteListener)
-                .addOnFailureListener(onFailureListener);
         }
         catch (ex) {
             console.log("Error in firebase.firestore.getCollection: " + ex);
@@ -3346,34 +3291,22 @@ firebase_common_1.firebase.firestore.get = function (collectionPath) {
 firebase_common_1.firebase.firestore.getDocument = function (collectionPath, documentPath) {
     return new Promise(function (resolve, reject) {
         try {
-            if (typeof (com.google.firebase.firestore) === "undefined") {
-                reject("Make sure firebase-firestore is in the plugin's include.gradle");
+            if (typeof (FIRFirestore) === "undefined") {
+                reject("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
                 return;
             }
-            var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        var ex = task.getException();
-                        reject(ex && ex.getReason ? ex.getReason() : ex);
-                    }
-                    else {
-                        var result_3 = task.getResult();
-                        var exists_1 = result_3.exists();
-                        resolve(new firebase_common_1.DocumentSnapshot(exists_1 ? result_3.getId() : null, exists_1, function () { return exists_1 ? firebase_common_1.firebase.toJsObject(result_3.getData()) : null; }));
-                    }
+            FIRFirestore.firestore()
+                .collectionWithPath(collectionPath)
+                .documentWithPath(documentPath)
+                .getDocumentWithCompletion(function (snapshot, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    var exists_1 = snapshot.exists;
+                    resolve(new firebase_common_1.DocumentSnapshot(exists_1 ? snapshot.documentID : null, exists_1, function () { return exists_1 ? firebase_common_1.firebase.toJsObject(snapshot.data()) : null; }));
                 }
             });
-            var onFailureListener = new com.google.android.gms.tasks.OnFailureListener({
-                onFailure: function (exception) {
-                    reject(exception.getMessage());
-                }
-            });
-            db.collection(collectionPath)
-                .document(documentPath)
-                .get()
-                .addOnCompleteListener(onCompleteListener)
-                .addOnFailureListener(onFailureListener);
         }
         catch (ex) {
             console.log("Error in firebase.firestore.getDocument: " + ex);
@@ -3384,29 +3317,25 @@ firebase_common_1.firebase.firestore.getDocument = function (collectionPath, doc
 firebase_common_1.firebase.firestore._getQuery = function (collectionPath, query) {
     return {
         get: function () { return new Promise(function (resolve, reject) {
-            var onCompleteListener = new com.google.android.gms.tasks.OnCompleteListener({
-                onComplete: function (task) {
-                    if (!task.isSuccessful()) {
-                        var ex = task.getException();
-                        reject(ex && ex.getReason ? ex.getReason() : ex);
+            query.getDocumentsWithCompletion(function (snapshot, error) {
+                if (error) {
+                    reject(error.localizedDescription);
+                }
+                else {
+                    console.log(">> .where, snapshot: " + snapshot);
+                    var docSnapshots = [];
+                    var _loop_3 = function (i, l) {
+                        var document_3 = snapshot.documents.objectAtIndex(i);
+                        docSnapshots.push(new firebase_common_1.DocumentSnapshot(document_3.documentID, true, function () { return firebase_common_1.firebase.toJsObject(document_3.data()); }));
+                    };
+                    for (var i = 0, l = snapshot.documents.count; i < l; i++) {
+                        _loop_3(i, l);
                     }
-                    else {
-                        var result = task.getResult();
-                        var docSnapshots = [];
-                        var _loop_3 = function (i) {
-                            var documentSnapshot = result.getDocuments().get(i);
-                            docSnapshots.push(new firebase_common_1.DocumentSnapshot(documentSnapshot.getId(), true, function () { return firebase_common_1.firebase.toJsObject(documentSnapshot.getData()); }));
-                        };
-                        for (var i = 0; i < result.size(); i++) {
-                            _loop_3(i);
-                        }
-                        var snap = new firebase_common_1.QuerySnapshot();
-                        snap.docSnapshots = docSnapshots;
-                        resolve(snap);
-                    }
+                    var snap = new firebase_common_1.QuerySnapshot();
+                    snap.docSnapshots = docSnapshots;
+                    resolve(snap);
                 }
             });
-            query.get().addOnCompleteListener(onCompleteListener);
         }); },
         where: function (fp, os, v) { return firebase_common_1.firebase.firestore.where(collectionPath, fp, os, v, query); },
         orderBy: function (fp, directionStr) { return firebase_common_1.firebase.firestore.orderBy(collectionPath, fp, directionStr, query); },
@@ -3416,26 +3345,25 @@ firebase_common_1.firebase.firestore._getQuery = function (collectionPath, query
 };
 firebase_common_1.firebase.firestore.where = function (collectionPath, fieldPath, opStr, value, query) {
     try {
-        if (typeof (com.google.firebase.firestore) === "undefined") {
-            console.log("Make sure firebase-firestore is in the plugin's include.gradle");
+        if (typeof (FIRFirestore) === "undefined") {
+            console.log("Make sure 'Firebase/Firestore' is in the plugin's Podfile");
             return null;
         }
-        var db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-        query = query || db.collection(collectionPath);
+        query = query || FIRFirestore.firestore().collectionWithPath(collectionPath);
         if (opStr === "<") {
-            query = query.whereLessThan(fieldPath, firebase_common_1.firebase.toValue(value));
+            query = query.queryWhereFieldIsLessThan(fieldPath, value);
         }
         else if (opStr === "<=") {
-            query = query.whereLessThanOrEqualTo(fieldPath, firebase_common_1.firebase.toValue(value));
+            query = query.queryWhereFieldIsLessThanOrEqualTo(fieldPath, value);
         }
         else if (opStr === "==") {
-            query = query.whereEqualTo(fieldPath, firebase_common_1.firebase.toValue(value));
+            query = query.queryWhereFieldIsEqualTo(fieldPath, value);
         }
         else if (opStr === ">=") {
-            query = query.whereGreaterThanOrEqualTo(fieldPath, firebase_common_1.firebase.toValue(value));
+            query = query.queryWhereFieldIsGreaterThanOrEqualTo(fieldPath, value);
         }
         else if (opStr === ">") {
-            query = query.whereGreaterThan(fieldPath, firebase_common_1.firebase.toValue(value));
+            query = query.queryWhereFieldIsGreaterThan(fieldPath, value);
         }
         else {
             console.log("Illegal argument for opStr: " + opStr);
@@ -3449,13 +3377,128 @@ firebase_common_1.firebase.firestore.where = function (collectionPath, fieldPath
     }
 };
 firebase_common_1.firebase.firestore.orderBy = function (collectionPath, fieldPath, direction, query) {
-    query = query.orderBy(fieldPath, direction === "desc" ? com.google.firebase.firestore.Query.Direction.DESCENDING : com.google.firebase.firestore.Query.Direction.ASCENDING);
+    query = query.queryOrderedByFieldDescending(fieldPath, direction === "desc");
     return firebase_common_1.firebase.firestore._getQuery(collectionPath, query);
 };
 firebase_common_1.firebase.firestore.limit = function (collectionPath, limit, query) {
-    query = query.limit(limit);
+    query = query.queryLimitedTo(limit);
     return firebase_common_1.firebase.firestore._getQuery(collectionPath, query);
 };
+var UNUserNotificationCenterDelegateImpl = (function (_super) {
+    __extends(UNUserNotificationCenterDelegateImpl, _super);
+    function UNUserNotificationCenterDelegateImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    UNUserNotificationCenterDelegateImpl.new = function () {
+        if (UNUserNotificationCenterDelegateImpl.ObjCProtocols.length === 0 && typeof (UNUserNotificationCenterDelegate) !== "undefined") {
+            UNUserNotificationCenterDelegateImpl.ObjCProtocols.push(UNUserNotificationCenterDelegate);
+        }
+        return _super.new.call(this);
+    };
+    UNUserNotificationCenterDelegateImpl.prototype.initWithCallback = function (callback) {
+        this.callback = callback;
+        return this;
+    };
+    UNUserNotificationCenterDelegateImpl.prototype.userNotificationCenterWillPresentNotificationWithCompletionHandler = function (center, notification, completionHandler) {
+        this.callback(notification);
+    };
+    UNUserNotificationCenterDelegateImpl.ObjCProtocols = [];
+    return UNUserNotificationCenterDelegateImpl;
+}(NSObject));
+var FIRInviteDelegateImpl = (function (_super) {
+    __extends(FIRInviteDelegateImpl, _super);
+    function FIRInviteDelegateImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    FIRInviteDelegateImpl.new = function () {
+        if (FIRInviteDelegateImpl.ObjCProtocols.length === 0 && typeof (FIRInviteDelegate) !== "undefined") {
+            FIRInviteDelegateImpl.ObjCProtocols.push(FIRInviteDelegate);
+        }
+        return _super.new.call(this);
+    };
+    FIRInviteDelegateImpl.prototype.initWithCallback = function (callback) {
+        this.callback = callback;
+        return this;
+    };
+    FIRInviteDelegateImpl.prototype.inviteFinishedWithInvitationsError = function (invitationIds, error) {
+        this.callback(invitationIds, error);
+    };
+    FIRInviteDelegateImpl.ObjCProtocols = [];
+    return FIRInviteDelegateImpl;
+}(NSObject));
+var FIRMessagingDelegateImpl = (function (_super) {
+    __extends(FIRMessagingDelegateImpl, _super);
+    function FIRMessagingDelegateImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    FIRMessagingDelegateImpl.new = function () {
+        if (FIRMessagingDelegateImpl.ObjCProtocols.length === 0 && typeof (FIRMessagingDelegate) !== "undefined") {
+            FIRMessagingDelegateImpl.ObjCProtocols.push(FIRMessagingDelegate);
+        }
+        return _super.new.call(this);
+    };
+    FIRMessagingDelegateImpl.prototype.initWithCallback = function (callback) {
+        this.callback = callback;
+        return this;
+    };
+    FIRMessagingDelegateImpl.prototype.applicationReceivedRemoteMessage = function (remoteMessage) {
+        this.callback(remoteMessage.appData);
+    };
+    FIRMessagingDelegateImpl.prototype.messagingDidReceiveMessage = function (messaging, remoteMessage) {
+        this.callback(remoteMessage.appData);
+    };
+    FIRMessagingDelegateImpl.prototype.messagingDidRefreshRegistrationToken = function (messaging, fcmToken) {
+        console.log(">> fcmToken refreshed: " + fcmToken);
+        firebase_common_1.firebase._onTokenRefreshNotification(fcmToken);
+    };
+    FIRMessagingDelegateImpl.ObjCProtocols = [];
+    return FIRMessagingDelegateImpl;
+}(NSObject));
+var GADInterstitialDelegateImpl = (function (_super) {
+    __extends(GADInterstitialDelegateImpl, _super);
+    function GADInterstitialDelegateImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    GADInterstitialDelegateImpl.new = function () {
+        if (GADInterstitialDelegateImpl.ObjCProtocols.length === 0 && typeof (GADInterstitialDelegate) !== "undefined") {
+            GADInterstitialDelegateImpl.ObjCProtocols.push(GADInterstitialDelegate);
+        }
+        return _super.new.call(this);
+    };
+    GADInterstitialDelegateImpl.prototype.initWithCallback = function (callback) {
+        this.callback = callback;
+        return this;
+    };
+    GADInterstitialDelegateImpl.prototype.interstitialDidReceiveAd = function (ad) {
+        this.callback(ad);
+    };
+    GADInterstitialDelegateImpl.prototype.interstitialDidFailToReceiveAdWithError = function (ad, error) {
+        this.callback(ad, error);
+    };
+    GADInterstitialDelegateImpl.ObjCProtocols = [];
+    return GADInterstitialDelegateImpl;
+}(NSObject));
+var GIDSignInDelegateImpl = (function (_super) {
+    __extends(GIDSignInDelegateImpl, _super);
+    function GIDSignInDelegateImpl() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    GIDSignInDelegateImpl.new = function () {
+        if (GIDSignInDelegateImpl.ObjCProtocols.length === 0 && typeof (GIDSignInDelegate) !== "undefined") {
+            GIDSignInDelegateImpl.ObjCProtocols.push(GIDSignInDelegate);
+        }
+        return _super.new.call(this);
+    };
+    GIDSignInDelegateImpl.prototype.initWithCallback = function (callback) {
+        this.callback = callback;
+        return this;
+    };
+    GIDSignInDelegateImpl.prototype.signInDidSignInForUserWithError = function (signIn, user, error) {
+        this.callback(user, error);
+    };
+    GIDSignInDelegateImpl.ObjCProtocols = [];
+    return GIDSignInDelegateImpl;
+}(NSObject));
 module.exports = firebase_common_1.firebase;
 
 
@@ -3481,13 +3524,13 @@ module.exports = firebase_common_1.firebase;
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
-var application = __webpack_require__(/*! application */ 2);
+var application = __webpack_require__(/*! application */ 22);
 var application__default = _interopDefault(application);
 var view = __webpack_require__(/*! ui/core/view */ 0);
-var contentView = __webpack_require__(/*! ui/content-view */ 10);
-var layoutBase = __webpack_require__(/*! ui/layouts/layout-base */ 3);
+var contentView = __webpack_require__(/*! ui/content-view */ 9);
+var layoutBase = __webpack_require__(/*! ui/layouts/layout-base */ 4);
 var page = __webpack_require__(/*! ui/page */ 28);
-var frame = __webpack_require__(/*! ui/frame */ 11);
+var frame = __webpack_require__(/*! ui/frame */ 26);
 
 /*  */
 
@@ -5377,16 +5420,16 @@ function isKnownView(elementName) {
 
 registerElement(
   'AbsoluteLayout',
-  function () { return __webpack_require__(/*! ui/layouts/absolute-layout */ 83).AbsoluteLayout; }
+  function () { return __webpack_require__(/*! ui/layouts/absolute-layout */ 81).AbsoluteLayout; }
 );
 registerElement(
   'ActivityIndicator',
-  function () { return __webpack_require__(/*! ui/activity-indicator */ 64).ActivityIndicator; }
+  function () { return __webpack_require__(/*! ui/activity-indicator */ 63).ActivityIndicator; }
 );
-registerElement('Border', function () { return __webpack_require__(/*! ui/border */ 67).Border; });
-registerElement('Button', function () { return __webpack_require__(/*! ui/button */ 43).Button; });
-registerElement('ContentView', function () { return __webpack_require__(/*! ui/content-view */ 10).ContentView; });
-registerElement('DatePicker', function () { return __webpack_require__(/*! ui/date-picker */ 73).DatePicker; }, {
+registerElement('Border', function () { return __webpack_require__(/*! ui/border */ 66).Border; });
+registerElement('Button', function () { return __webpack_require__(/*! ui/button */ 41).Button; });
+registerElement('ContentView', function () { return __webpack_require__(/*! ui/content-view */ 9).ContentView; });
+registerElement('DatePicker', function () { return __webpack_require__(/*! ui/date-picker */ 72).DatePicker; }, {
   model: {
     prop: 'date',
     event: 'dateChange'
@@ -5394,41 +5437,41 @@ registerElement('DatePicker', function () { return __webpack_require__(/*! ui/da
 });
 registerElement(
   'DockLayout',
-  function () { return __webpack_require__(/*! ui/layouts/dock-layout */ 85).DockLayout; }
+  function () { return __webpack_require__(/*! ui/layouts/dock-layout */ 83).DockLayout; }
 );
 registerElement(
   'GridLayout',
-  function () { return __webpack_require__(/*! ui/layouts/grid-layout */ 49).GridLayout; }
+  function () { return __webpack_require__(/*! ui/layouts/grid-layout */ 87).GridLayout; }
 );
-registerElement('HtmlView', function () { return __webpack_require__(/*! ui/html-view */ 80).HtmlView; });
-registerElement('Image', function () { return __webpack_require__(/*! ui/image */ 48).Image; });
-registerElement('img', function () { return __webpack_require__(/*! ui/image */ 48).Image; });
-registerElement('Label', function () { return __webpack_require__(/*! ui/label */ 22).Label; });
-registerElement('ListPicker', function () { return __webpack_require__(/*! ui/list-picker */ 93).ListPicker; }, {
+registerElement('HtmlView', function () { return __webpack_require__(/*! ui/html-view */ 78).HtmlView; });
+registerElement('Image', function () { return __webpack_require__(/*! ui/image */ 44).Image; });
+registerElement('img', function () { return __webpack_require__(/*! ui/image */ 44).Image; });
+registerElement('Label', function () { return __webpack_require__(/*! ui/label */ 20).Label; });
+registerElement('ListPicker', function () { return __webpack_require__(/*! ui/list-picker */ 92).ListPicker; }, {
   model: {
     prop: 'selectedIndex',
     event: 'selectedIndexChange'
   }
 });
-registerElement('NativeActionBar', function () { return __webpack_require__(/*! ui/action-bar */ 16).ActionBar; });
-registerElement('NativeActionItem', function () { return __webpack_require__(/*! ui/action-bar */ 16).ActionItem; });
-registerElement('NativeListView', function () { return __webpack_require__(/*! ui/list-view */ 95).ListView; });
+registerElement('NativeActionBar', function () { return __webpack_require__(/*! ui/action-bar */ 18).ActionBar; });
+registerElement('NativeActionItem', function () { return __webpack_require__(/*! ui/action-bar */ 18).ActionItem; });
+registerElement('NativeListView', function () { return __webpack_require__(/*! ui/list-view */ 94).ListView; });
 registerElement(
   'NativeNavigationButton',
-  function () { return __webpack_require__(/*! ui/action-bar */ 16).NavigationButton; }
+  function () { return __webpack_require__(/*! ui/action-bar */ 18).NavigationButton; }
 );
 registerElement('Page', function () { return __webpack_require__(/*! ui/page */ 28).Page; }, {
   skipAddToDom: true
 });
 registerElement('Placeholder', function () { return __webpack_require__(/*! ui/placeholder */ 29).Placeholder; });
-registerElement('Progress', function () { return __webpack_require__(/*! ui/progress */ 98).Progress; });
+registerElement('Progress', function () { return __webpack_require__(/*! ui/progress */ 97).Progress; });
 registerElement(
   'ProxyViewContainer',
-  function () { return __webpack_require__(/*! ui/proxy-view-container */ 23).ProxyViewContainer; }
+  function () { return __webpack_require__(/*! ui/proxy-view-container */ 21).ProxyViewContainer; }
 );
-registerElement('Repeater', function () { return __webpack_require__(/*! ui/repeater */ 99).Repeater; });
-registerElement('ScrollView', function () { return __webpack_require__(/*! ui/scroll-view */ 101).ScrollView; });
-registerElement('SearchBar', function () { return __webpack_require__(/*! ui/search-bar */ 103).SearchBar; }, {
+registerElement('Repeater', function () { return __webpack_require__(/*! ui/repeater */ 98).Repeater; });
+registerElement('ScrollView', function () { return __webpack_require__(/*! ui/scroll-view */ 100).ScrollView; });
+registerElement('SearchBar', function () { return __webpack_require__(/*! ui/search-bar */ 102).SearchBar; }, {
   model: {
     prop: 'text',
     event: 'textChange'
@@ -5436,7 +5479,7 @@ registerElement('SearchBar', function () { return __webpack_require__(/*! ui/sea
 });
 registerElement(
   'SegmentedBar',
-  function () { return __webpack_require__(/*! ui/segmented-bar */ 50).SegmentedBar; },
+  function () { return __webpack_require__(/*! ui/segmented-bar */ 45).SegmentedBar; },
   {
     model: {
       prop: 'selectedIndex',
@@ -5446,9 +5489,9 @@ registerElement(
 );
 registerElement(
   'SegmentedBarItem',
-  function () { return __webpack_require__(/*! ui/segmented-bar */ 50).SegmentedBarItem; }
+  function () { return __webpack_require__(/*! ui/segmented-bar */ 45).SegmentedBarItem; }
 );
-registerElement('Slider', function () { return __webpack_require__(/*! ui/slider */ 106).Slider; }, {
+registerElement('Slider', function () { return __webpack_require__(/*! ui/slider */ 105).Slider; }, {
   model: {
     prop: 'value',
     event: 'valueChange'
@@ -5460,47 +5503,47 @@ registerElement(
 );
 registerElement(
   'FlexboxLayout',
-  function () { return __webpack_require__(/*! ui/layouts/flexbox-layout */ 87).FlexboxLayout; }
+  function () { return __webpack_require__(/*! ui/layouts/flexbox-layout */ 85).FlexboxLayout; }
 );
-registerElement('Switch', function () { return __webpack_require__(/*! ui/switch */ 110).Switch; }, {
+registerElement('Switch', function () { return __webpack_require__(/*! ui/switch */ 108).Switch; }, {
   model: {
     prop: 'checked',
     event: 'checkedChange'
   }
 });
 
-registerElement('NativeTabView', function () { return __webpack_require__(/*! ui/tab-view */ 52).TabView; }, {
+registerElement('NativeTabView', function () { return __webpack_require__(/*! ui/tab-view */ 48).TabView; }, {
   model: {
     prop: 'selectedIndex',
     event: 'selectedIndexChange'
   }
 });
-registerElement('NativeTabViewItem', function () { return __webpack_require__(/*! ui/tab-view */ 52).TabViewItem; }, {
+registerElement('NativeTabViewItem', function () { return __webpack_require__(/*! ui/tab-view */ 48).TabViewItem; }, {
   skipAddToDom: true
 });
 
-registerElement('TextField', function () { return __webpack_require__(/*! ui/text-field */ 53).TextField; });
-registerElement('TextView', function () { return __webpack_require__(/*! ui/text-view */ 114).TextView; });
-registerElement('TimePicker', function () { return __webpack_require__(/*! ui/time-picker */ 116).TimePicker; }, {
+registerElement('TextField', function () { return __webpack_require__(/*! ui/text-field */ 49).TextField; });
+registerElement('TextView', function () { return __webpack_require__(/*! ui/text-view */ 112).TextView; });
+registerElement('TimePicker', function () { return __webpack_require__(/*! ui/time-picker */ 114).TimePicker; }, {
   model: {
     prop: 'time',
     event: 'timeChange'
   }
 });
-registerElement('WebView', function () { return __webpack_require__(/*! ui/web-view */ 118).WebView; });
+registerElement('WebView', function () { return __webpack_require__(/*! ui/web-view */ 117).WebView; });
 registerElement(
   'WrapLayout',
-  function () { return __webpack_require__(/*! ui/layouts/wrap-layout */ 183).WrapLayout; }
+  function () { return __webpack_require__(/*! ui/layouts/wrap-layout */ 180).WrapLayout; }
 );
 registerElement(
   'FormattedString',
-  function () { return __webpack_require__(/*! text/formatted-string */ 40).FormattedString; }
+  function () { return __webpack_require__(/*! text/formatted-string */ 38).FormattedString; }
 );
-registerElement('Span', function () { return __webpack_require__(/*! text/span */ 41).Span; });
+registerElement('Span', function () { return __webpack_require__(/*! text/span */ 39).Span; });
 
 registerElement(
   'DetachedContainer',
-  function () { return __webpack_require__(/*! ui/proxy-view-container */ 23).ProxyViewContainer; },
+  function () { return __webpack_require__(/*! ui/proxy-view-container */ 21).ProxyViewContainer; },
   {
     skipAddToDom: true
   }
@@ -5511,7 +5554,7 @@ registerElement('DetachedText', function () { return __webpack_require__(/*! ui/
 registerElement('Comment', function () { return __webpack_require__(/*! ui/placeholder */ 29).Placeholder; });
 registerElement(
   'Document',
-  function () { return __webpack_require__(/*! ui/proxy-view-container */ 23).ProxyViewContainer; },
+  function () { return __webpack_require__(/*! ui/proxy-view-container */ 21).ProxyViewContainer; },
   {
     skipAddToDom: true
   }
@@ -15560,9 +15603,9 @@ module.exports = Vue$3;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_http__ = __webpack_require__(/*! tns-core-modules/http */ 39);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_http__ = __webpack_require__(/*! tns-core-modules/http */ 37);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_http___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_tns_core_modules_http__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__BackendService__ = __webpack_require__(/*! ./BackendService */ 56);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__BackendService__ = __webpack_require__(/*! ./BackendService */ 53);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__ = __webpack_require__(/*! nativescript-plugin-firebase */ 31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -15665,10 +15708,7 @@ var FirebaseService = function (_BackendService) {
 /* 50 */,
 /* 51 */,
 /* 52 */,
-/* 53 */,
-/* 54 */,
-/* 55 */,
-/* 56 */
+/* 53 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************************!*\
@@ -15677,7 +15717,7 @@ var FirebaseService = function (_BackendService) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_application_settings__ = __webpack_require__(/*! tns-core-modules/application-settings */ 157);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_application_settings__ = __webpack_require__(/*! tns-core-modules/application-settings */ 56);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_application_settings___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_tns_core_modules_application_settings__);
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -15717,7 +15757,7 @@ var BackendService = function () {
 /* harmony default export */ __webpack_exports__["a"] = (BackendService);
 
 /***/ }),
-/* 57 */
+/* 54 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************!*\
@@ -15728,7 +15768,7 @@ var BackendService = function () {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue__ = __webpack_require__(/*! nativescript-vue */ 32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_nativescript_vue__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 15);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__ = __webpack_require__(/*! nativescript-plugin-firebase */ 31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__);
 
@@ -15892,7 +15932,7 @@ var storeConf = {
 /* harmony default export */ __webpack_exports__["a"] = (storeConf);
 
 /***/ }),
-/* 58 */
+/* 55 */
 /* no static exports found */
 /* all exports used */
 /*!*******************************!*\
@@ -16087,6 +16127,73 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
+/* 56 */
+/* no static exports found */
+/* all exports used */
+/*!******************************************************************************!*\
+  !*** ../~/tns-core-modules/application-settings/application-settings.ios.js ***!
+  \******************************************************************************/
+/***/ (function(module, exports, __webpack_require__) {
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var Common = __webpack_require__(/*! ./application-settings-common */ 155);
+var utils = __webpack_require__(/*! ../utils/utils */ 1);
+var userDefaults = utils.ios.getter(NSUserDefaults, NSUserDefaults.standardUserDefaults);
+exports.hasKey = function (key) {
+    Common.checkKey(key);
+    return userDefaults.objectForKey(key) !== null;
+};
+exports.getBoolean = function (key, defaultValue) {
+    Common.checkKey(key);
+    if (exports.hasKey(key)) {
+        return userDefaults.boolForKey(key);
+    }
+    return defaultValue;
+};
+exports.getString = function (key, defaultValue) {
+    Common.checkKey(key);
+    if (exports.hasKey(key)) {
+        return userDefaults.stringForKey(key);
+    }
+    return defaultValue;
+};
+exports.getNumber = function (key, defaultValue) {
+    Common.checkKey(key);
+    if (exports.hasKey(key)) {
+        return userDefaults.doubleForKey(key);
+    }
+    return defaultValue;
+};
+exports.setBoolean = function (key, value) {
+    Common.checkKey(key);
+    Common.ensureValidValue(value, "boolean");
+    userDefaults.setBoolForKey(value, key);
+};
+exports.setString = function (key, value) {
+    Common.checkKey(key);
+    Common.ensureValidValue(value, "string");
+    userDefaults.setObjectForKey(value, key);
+};
+exports.setNumber = function (key, value) {
+    Common.checkKey(key);
+    Common.ensureValidValue(value, "number");
+    userDefaults.setDoubleForKey(value, key);
+};
+exports.remove = function (key) {
+    Common.checkKey(key);
+    userDefaults.removeObjectForKey(key);
+};
+exports.clear = function () {
+    userDefaults.removePersistentDomainForName(utils.ios.getter(NSBundle, NSBundle.mainBundle).bundleIdentifier);
+};
+exports.flush = function () {
+    return userDefaults.synchronize();
+};
+//# sourceMappingURL=application-settings.ios.js.map
+
+/***/ }),
+/* 57 */,
+/* 58 */,
 /* 59 */,
 /* 60 */,
 /* 61 */,
@@ -16118,8 +16225,7 @@ process.umask = function() { return 0; };
 /* 87 */,
 /* 88 */,
 /* 89 */,
-/* 90 */,
-/* 91 */
+/* 90 */
 /* no static exports found */
 /* all exports used */
 /*!**************************************************************************!*\
@@ -16131,8 +16237,8 @@ function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 Object.defineProperty(exports, "__esModule", { value: true });
-var layout_base_1 = __webpack_require__(/*! ../layout-base */ 3);
-__export(__webpack_require__(/*! ../layout-base */ 3));
+var layout_base_1 = __webpack_require__(/*! ../layout-base */ 4);
+__export(__webpack_require__(/*! ../layout-base */ 4));
 var WrapLayoutBase = (function (_super) {
     __extends(WrapLayoutBase, _super);
     function WrapLayoutBase() {
@@ -16158,6 +16264,7 @@ exports.orientationProperty.register(WrapLayoutBase);
 //# sourceMappingURL=wrap-layout-common.js.map
 
 /***/ }),
+/* 91 */,
 /* 92 */,
 /* 93 */,
 /* 94 */,
@@ -16186,8 +16293,7 @@ exports.orientationProperty.register(WrapLayoutBase);
 /* 117 */,
 /* 118 */,
 /* 119 */,
-/* 120 */,
-/* 121 */
+/* 120 */
 /* exports provided: default */
 /* exports used: default */
 /*!**********************************************!*\
@@ -18820,11 +18926,11 @@ if (inBrowser && window.Vue) {
 
 /* harmony default export */ __webpack_exports__["a"] = (VueRouter);
 
-/* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(/*! ./../../process/browser.js */ 58)))
+/* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(/*! ./../../process/browser.js */ 55)))
 
 /***/ }),
-/* 122 */,
-/* 123 */
+/* 121 */,
+/* 122 */
 /* exports provided: default */
 /* exports used: default */
 /*!**************************!*\
@@ -18835,12 +18941,12 @@ if (inBrowser && window.Vue) {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue__ = __webpack_require__(/*! nativescript-vue */ 32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_nativescript_vue__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 121);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_Home_Home_vue__ = __webpack_require__(/*! @/components/Home/Home.vue */ 146);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__ = __webpack_require__(/*! @/components/Login/Login.vue */ 147);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__components_Assignments_Assignments_vue__ = __webpack_require__(/*! @/components/Assignments/Assignments.vue */ 145);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__components_Assignment_Assignment_vue__ = __webpack_require__(/*! @/components/Assignment/Assignment.vue */ 144);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__store_store_js__ = __webpack_require__(/*! @/store/store.js */ 57);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 120);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_Home_Home_vue__ = __webpack_require__(/*! @/components/Home/Home.vue */ 145);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__ = __webpack_require__(/*! @/components/Login/Login.vue */ 146);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__components_Assignments_Assignments_vue__ = __webpack_require__(/*! @/components/Assignments/Assignments.vue */ 144);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__components_Assignment_Assignment_vue__ = __webpack_require__(/*! @/components/Assignment/Assignment.vue */ 143);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__store_store_js__ = __webpack_require__(/*! @/store/store.js */ 54);
 
 
 
@@ -18854,6 +18960,7 @@ if (inBrowser && window.Vue) {
 __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default.a.use(__WEBPACK_IMPORTED_MODULE_1_vue_router__["a" /* default */]);
 
 var router = new __WEBPACK_IMPORTED_MODULE_1_vue_router__["a" /* default */]({
+  mode: 'history',
   routes: [{
     path: '/login',
     component: __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__["a" /* default */],
@@ -18883,7 +18990,7 @@ router.beforeEach(function (to, from, next) {
 /* harmony default export */ __webpack_exports__["a"] = (router);
 
 /***/ }),
-/* 124 */
+/* 123 */
 /* exports provided: setStatusBarColors */
 /* exports used: setStatusBarColors */
 /*!****************************!*\
@@ -18893,11 +19000,11 @@ router.beforeEach(function (to, from, next) {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = setStatusBarColors;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_application__ = __webpack_require__(/*! application */ 2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_application__ = __webpack_require__(/*! application */ 22);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_application___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_application__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_platform__ = __webpack_require__(/*! platform */ 4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_platform__ = __webpack_require__(/*! platform */ 3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_platform___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_platform__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_utils_utils__ = __webpack_require__(/*! utils/utils */ 6);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_utils_utils__ = __webpack_require__(/*! utils/utils */ 1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_utils_utils___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_utils_utils__);
 
 
@@ -18927,10 +19034,10 @@ function setStatusBarColors() {
 }
 
 /***/ }),
+/* 124 */,
 /* 125 */,
 /* 126 */,
-/* 127 */,
-/* 128 */
+/* 127 */
 /* no static exports found */
 /* all exports used */
 /*!*****************!*\
@@ -18942,17 +19049,17 @@ function setStatusBarColors() {
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue__ = __webpack_require__(/*! nativescript-vue */ 32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_nativescript_vue__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 15);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__ = __webpack_require__(/*! nativescript-plugin-firebase */ 31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_nativescript_plugin_firebase__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__router_routes__ = __webpack_require__(/*! ./router/routes */ 123);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_tns_core_modules_platform__ = __webpack_require__(/*! tns-core-modules/platform */ 4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__router_routes__ = __webpack_require__(/*! ./router/routes */ 122);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_tns_core_modules_platform__ = __webpack_require__(/*! tns-core-modules/platform */ 3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4_tns_core_modules_platform___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_4_tns_core_modules_platform__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__services_BackendService__ = __webpack_require__(/*! ./services/BackendService */ 56);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_statusBar__ = __webpack_require__(/*! ./utils/statusBar */ 124);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__app_css__ = __webpack_require__(/*! ./app.css */ 126);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__services_BackendService__ = __webpack_require__(/*! ./services/BackendService */ 53);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_statusBar__ = __webpack_require__(/*! ./utils/statusBar */ 123);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__app_css__ = __webpack_require__(/*! ./app.css */ 125);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__app_css___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_7__app_css__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__store_store_js__ = __webpack_require__(/*! ./store/store.js */ 57);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__store_store_js__ = __webpack_require__(/*! ./store/store.js */ 54);
 
 
 
@@ -19024,7 +19131,7 @@ new __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default.a({
 }).$start();
 
 /***/ }),
-/* 129 */
+/* 128 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************!*\
@@ -19045,7 +19152,7 @@ var _class = function _class() {
 /* harmony default export */ __webpack_exports__["a"] = (_class);
 
 /***/ }),
-/* 130 */
+/* 129 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************!*\
@@ -19055,7 +19162,7 @@ var _class = function _class() {
 
 "use strict";
 /* harmony export (immutable) */ __webpack_exports__["a"] = alert;
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_dialogs__ = __webpack_require__(/*! ui/dialogs */ 21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_dialogs__ = __webpack_require__(/*! ui/dialogs */ 19);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_dialogs___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_ui_dialogs__);
 
 
@@ -19068,8 +19175,8 @@ function alert(message) {
 }
 
 /***/ }),
-/* 131 */,
-/* 132 */
+/* 130 */,
+/* 131 */
 /* exports provided: default */
 /* exports used: default */
 /*!*************************************************************************************************************************************!*\
@@ -19078,11 +19185,17 @@ function alert(message) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vuex__ = __webpack_require__(/*! vuex */ 18);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nativescript_speech_recognition__ = __webpack_require__(/*! nativescript-speech-recognition */ 143);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_vuex__ = __webpack_require__(/*! vuex */ 15);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nativescript_speech_recognition__ = __webpack_require__(/*! nativescript-speech-recognition */ 142);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_nativescript_speech_recognition___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_nativescript_speech_recognition__);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+//
+//
+//
+//
+//
+//
 //
 //
 //
@@ -19123,7 +19236,6 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
     return {
       isSpeaking: false,
       speechRecognition: new __WEBPACK_IMPORTED_MODULE_1_nativescript_speech_recognition__["SpeechRecognition"]()
-      //transcription: SpeechRecognitionTranscription
     };
   },
   computed: _extends({}, __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0_vuex__["b" /* mapState */])(['user', 'activeClassroom']), __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0_vuex__["c" /* mapGetters */])(['assignment'])),
@@ -19138,8 +19250,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
   },
   mounted: function mounted() {
     this.speechRecognition.requestPermission().then(function (granted) {
-      console.log("Granted? " + granted);
-      alert(granted);
+      if (!granted) {
+        alert("It seems that you haven't enabled the microphone. Please visit your app settings and let this app listen to your voice!");
+      }
     });
   },
   created: function created() {
@@ -19148,63 +19261,81 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
   methods: {
     init: function init() {
-      //this errors
-      this.speechRecognition.available().then(function (available) {
-        console.log(available);
-      });
+
+      this.speechRecognition.available().then(function (available) {});
     },
     requestPermission: function requestPermission() {
-      this.speechRecognition.requestPermission().then(function (granted) {
-        console.log("Granted? " + granted);
-        alert(granted);
-      });
+      this.speechRecognition.requestPermission().then(function (granted) {});
+    },
+    similarity: function similarity(s1, s2) {
+      var longer = s1;
+      var shorter = s2;
+      if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+      }
+      var longerLength = longer.length;
+      if (longerLength == 0) {
+        return 1.0;
+      }
+      return (longerLength - this.editDistance(longer, shorter)) / parseFloat(longerLength);
+    },
+    editDistance: function editDistance(s1, s2) {
+      s1 = s1.toLowerCase();
+      s2 = s2.toLowerCase();
+
+      var costs = new Array();
+      for (var i = 0; i <= s1.length; i++) {
+        var lastValue = i;
+        for (var j = 0; j <= s2.length; j++) {
+          if (i == 0) costs[j] = j;else {
+            if (j > 0) {
+              var newValue = costs[j - 1];
+              if (s1.charAt(i - 1) != s2.charAt(j - 1)) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+              costs[j - 1] = lastValue;
+              lastValue = newValue;
+            }
+          }
+        }
+        if (i > 0) costs[s2.length] = lastValue;
+      }
+      return costs[s2.length];
     },
     goBack: function goBack() {
       this.$navigateBack();
     },
     startListening: function startListening() {
+      var _this = this;
+
+      this.isSpeaking = true;
       this.speechRecognition.startListening({
         onResult: function onResult(transcription) {
-          console.log(transcription.text, transcription.finished);
+          _this.$refs.transcriptionLbl.nativeView.text = transcription.text;
         },
         returnPartialResults: true,
-        locale: 'en-US'
+        locale: 'FR'
       }).then(function (started) {}, function (errorMessage) {
         console.log('Error while trying to start listening: ' + errorMessage);
       });
-
-      /*const options = {
-          locale: 'en-US',
-          onResult: (transcription) => {
-              console.log(transcription.text,transcription.finished);
-              this.transcription = transcription;
-          }
-      }
-      this.speechRecognition.startListening(options).then(() => {
-          //this.showActivityIndicator();
-          console.log("Started")
-      }, error => {
-          //this.hideActivityIndicator();
-          console.log(error)
-      })*/
     },
     stopListening: function stopListening() {
+      var _this2 = this;
+
       this.speechRecognition.stopListening().then(function () {
-        //this.hideActivityIndicator();
-        console.log("Stopped");
+        _this2.isSpeaking = false;
       });
     },
-    showActivityIndicator: function showActivityIndicator() {
-      //this.isSpeaking = true;
-    },
-    hideActivityIndicator: function hideActivityIndicator() {
-      //this.isSpeaking = false;
+    getScore: function getScore() {
+      //compare
+      console.log(this.assignment.Text, this.$refs.transcriptionLbl.nativeView.text);
+      var score = this.similarity(this.assignment.Text, this.$refs.transcriptionLbl.nativeView.text);
+      console.log(score);
     }
   }
 });
 
 /***/ }),
-/* 133 */
+/* 132 */
 /* exports provided: default */
 /* exports used: default */
 /*!***************************************************************************************************************************************!*\
@@ -19214,8 +19345,8 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 121);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_vuex__ = __webpack_require__(/*! vuex */ 18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 120);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_vuex__ = __webpack_require__(/*! vuex */ 15);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 //
@@ -19276,7 +19407,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 });
 
 /***/ }),
-/* 134 */
+/* 133 */
 /* exports provided: default */
 /* exports used: default */
 /*!*************************************************************************************************************************!*\
@@ -19286,7 +19417,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 18);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 15);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 //
@@ -19345,7 +19476,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 });
 
 /***/ }),
-/* 135 */
+/* 134 */
 /* exports provided: default */
 /* exports used: default */
 /*!***************************************************************************************************************************!*\
@@ -19354,11 +19485,11 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_platform__ = __webpack_require__(/*! tns-core-modules/platform */ 4);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_platform__ = __webpack_require__(/*! tns-core-modules/platform */ 3);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_tns_core_modules_platform___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_tns_core_modules_platform__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__LoginInitial_vue__ = __webpack_require__(/*! ./LoginInitial.vue */ 148);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__LoginMain_vue__ = __webpack_require__(/*! ./LoginMain.vue */ 149);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_ui_enums__ = __webpack_require__(/*! ui/enums */ 47);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__LoginInitial_vue__ = __webpack_require__(/*! ./LoginInitial.vue */ 147);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__LoginMain_vue__ = __webpack_require__(/*! ./LoginMain.vue */ 148);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_ui_enums__ = __webpack_require__(/*! ui/enums */ 25);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_ui_enums___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_ui_enums__);
 //
 //
@@ -19415,7 +19546,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 });
 
 /***/ }),
-/* 136 */
+/* 135 */
 /* exports provided: default */
 /* exports used: default */
 /*!**********************************************************************************************************************************!*\
@@ -19455,7 +19586,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 });
 
 /***/ }),
-/* 137 */
+/* 136 */
 /* exports provided: default */
 /* exports used: default */
 /*!*******************************************************************************************************************************!*\
@@ -19464,17 +19595,17 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_animation__ = __webpack_require__(/*! ui/animation */ 17);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_animation__ = __webpack_require__(/*! ui/animation */ 23);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_ui_animation___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_ui_animation__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ui_dialogs__ = __webpack_require__(/*! ui/dialogs */ 21);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ui_dialogs__ = __webpack_require__(/*! ui/dialogs */ 19);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_ui_dialogs___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_ui_dialogs__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color__ = __webpack_require__(/*! tns-core-modules/color */ 20);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color__ = __webpack_require__(/*! tns-core-modules/color */ 14);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity__ = __webpack_require__(/*! tns-core-modules/connectivity */ 160);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity__ = __webpack_require__(/*! tns-core-modules/connectivity */ 158);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_User__ = __webpack_require__(/*! ../../models/User */ 129);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_User__ = __webpack_require__(/*! ../../models/User */ 128);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_alert__ = __webpack_require__(/*! ../../utils/alert */ 130);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_alert__ = __webpack_require__(/*! ../../utils/alert */ 129);
 //
 //
 //
@@ -19645,7 +19776,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 });
 
 /***/ }),
-/* 138 */
+/* 137 */
 /* no static exports found */
 /* all exports used */
 /*!***************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
@@ -19656,7 +19787,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 139 */
+/* 138 */
 /* no static exports found */
 /* all exports used */
 /*!*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
@@ -19667,7 +19798,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 140 */
+/* 139 */
 /* no static exports found */
 /* all exports used */
 /*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
@@ -19678,7 +19809,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 141 */
+/* 140 */
 /* no static exports found */
 /* all exports used */
 /*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
@@ -19689,7 +19820,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 // removed by extract-text-webpack-plugin
 
 /***/ }),
-/* 142 */
+/* 141 */
 /* no static exports found */
 /* all exports used */
 /*!************************************************************!*\
@@ -19700,7 +19831,7 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var dialogs_1 = __webpack_require__(/*! tns-core-modules/ui/dialogs */ 21);
+var dialogs_1 = __webpack_require__(/*! tns-core-modules/ui/dialogs */ 19);
 exports.firebase = {
     initialized: false,
     instance: null,
@@ -19910,168 +20041,131 @@ exports.QuerySnapshot = QuerySnapshot;
 
 
 /***/ }),
-/* 143 */
+/* 142 */
 /* no static exports found */
 /* exports used: SpeechRecognition */
-/*!**************************************************************************!*\
-  !*** ../~/nativescript-speech-recognition/speech-recognition.android.js ***!
-  \**************************************************************************/
+/*!**********************************************************************!*\
+  !*** ../~/nativescript-speech-recognition/speech-recognition.ios.js ***!
+  \**********************************************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var application = __webpack_require__(/*! tns-core-modules/application */ 2);
-var utils = __webpack_require__(/*! tns-core-modules/utils/utils */ 6);
 var SpeechRecognition = (function () {
     function SpeechRecognition() {
-        var _this = this;
-        this.recognizer = null;
-        var self = this;
-        application.android.on(application.AndroidApplication.activityRequestPermissionsEvent, function (args) {
-            for (var i = 0; i < args.permissions.length; i++) {
-                if (args.grantResults[i] === android.content.pm.PackageManager.PERMISSION_DENIED) {
-                    if (self.onPermissionRejected) {
-                        self.onPermissionRejected("Please allow access to the Microphone and try again.");
-                    }
-                    else {
-                        console.log("Please allow access to the Microphone and try again. (tip: pass in a reject to receive this message in your app)");
-                    }
-                    return;
-                }
-            }
-            if (self.onPermissionGranted) {
-                self.onPermissionGranted();
-            }
-        });
-        application.on(application.suspendEvent, function (args) {
-            if (_this.recognizer !== null) {
-                _this.stopListening();
-            }
-        });
+        this.recognitionRequest = null;
+        this.audioEngine = null;
+        this.speechRecognizer = null;
+        this.recognitionTask = null;
+        this.inputNode = null;
+        this.audioSession = null;
+        this.audioEngine = AVAudioEngine.new();
     }
     SpeechRecognition.prototype.available = function () {
         return new Promise(function (resolve, reject) {
-            resolve(android.speech.SpeechRecognizer.isRecognitionAvailable(application.android.context));
+            resolve(SFSpeechRecognizer.new().available);
         });
     };
     SpeechRecognition.prototype.requestPermission = function () {
-        var _this = this;
-        console.log(">> requestPermission");
         return new Promise(function (resolve, reject) {
-            _this._requestPermission(function () { return resolve(true); }, function () { return resolve(false); });
+            SFSpeechRecognizer.requestAuthorization(function (status) {
+                if (status !== 3) {
+                    resolve(false);
+                    return;
+                }
+                AVAudioSession.sharedInstance().requestRecordPermission(function (granted) {
+                    resolve(granted);
+                });
+            });
         });
     };
     SpeechRecognition.prototype.startListening = function (options) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            var onPermissionGranted = function () {
-                var loopHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-                loopHandler.post(new java.lang.Runnable({
-                    run: function () {
-                        _this.recognizer = android.speech.SpeechRecognizer.createSpeechRecognizer(application.android.context);
-                        _this.recognizer.setRecognitionListener(new android.speech.RecognitionListener({
-                            onReadyForSpeech: function (params) {
-                                resolve(true);
-                            },
-                            onBeginningOfSpeech: function () {
-                            },
-                            onRmsChanged: function (rmsdB) {
-                            },
-                            onBufferReceived: function (buffer) {
-                            },
-                            onEndOfSpeech: function () {
-                            },
-                            onError: function (error) {
-                                console.log("Error: " + error);
-                                reject("Error code: " + error);
-                            },
-                            onResults: function (results) {
-                                this.sendBackResults(results, false);
-                            },
-                            onPartialResults: function (partialResults) {
-                                if (options.returnPartialResults) {
-                                    this.sendBackResults(partialResults, true);
-                                }
-                            },
-                            sendBackResults: function (results, partial) {
-                                var transcripts = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
-                                var transcript = null;
-                                if (!transcripts.isEmpty()) {
-                                    transcript = transcripts.get(0);
-                                }
-                                options.onResult({
-                                    text: transcript,
-                                    finished: !partial
-                                });
-                            },
-                            onEvent: function (eventType, params) {
-                            }
-                        }));
-                    }
-                }));
-                var intent = new android.content.Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-                intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL, android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-                intent.putExtra(android.speech.RecognizerIntent.EXTRA_CALLING_PACKAGE, "voice.recognition.test");
-                if (options.locale) {
-                    intent.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, options.locale);
-                }
-                if (options.returnPartialResults) {
-                    intent.putExtra(android.speech.RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
-                }
-                intent.putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 100);
-                loopHandler.post(new java.lang.Runnable({
-                    run: function () {
-                        _this.recognizer.startListening(intent);
-                    }
-                }));
-            };
-            if (!_this.wasPermissionGranted()) {
-                _this._requestPermission(onPermissionGranted, reject);
-                return;
+            if (options.locale) {
+                var locale = NSLocale.alloc().initWithLocaleIdentifier(options.locale);
+                _this.speechRecognizer = SFSpeechRecognizer.alloc().initWithLocale(locale);
             }
-            onPermissionGranted();
+            else {
+                _this.speechRecognizer = SFSpeechRecognizer.new();
+            }
+            if (_this.recognitionTask !== null) {
+                _this.recognitionTask.cancel();
+                _this.recognitionTask = null;
+            }
+            SFSpeechRecognizer.requestAuthorization(function (status) {
+                if (status !== 3) {
+                    reject("Not authorized");
+                    return;
+                }
+                _this.audioSession = AVAudioSession.sharedInstance();
+                _this.audioSession.setCategoryError(AVAudioSessionCategoryRecord);
+                _this.audioSession.setModeError(AVAudioSessionModeMeasurement);
+                _this.audioSession.setActiveWithOptionsError(true, 1);
+                _this.recognitionRequest = SFSpeechAudioBufferRecognitionRequest.new();
+                if (!_this.recognitionRequest) {
+                    reject("Unable to create an SFSpeechAudioBufferRecognitionRequest object");
+                    return;
+                }
+                _this.inputNode = _this.audioEngine.inputNode;
+                if (!_this.inputNode) {
+                    reject("Audio engine has no input node");
+                    return;
+                }
+                _this.recognitionRequest.shouldReportPartialResults = options.returnPartialResults;
+                _this.recognitionTask = _this.speechRecognizer.recognitionTaskWithRequestResultHandler(_this.recognitionRequest, function (result, error) {
+                    if (result !== null) {
+                        options.onResult({
+                            finished: result.final,
+                            text: result.bestTranscription.formattedString
+                        });
+                    }
+                    if (error !== null || (result !== null && result.final)) {
+                        _this.audioEngine.stop();
+                        _this.inputNode.removeTapOnBus(0);
+                        _this.audioSession.setCategoryError(AVAudioSessionCategoryPlayback);
+                        _this.audioSession.setModeError(AVAudioSessionModeDefault);
+                        _this.recognitionRequest = null;
+                        _this.recognitionTask = null;
+                    }
+                    if (error !== null) {
+                        console.log("error in handler: " + error.localizedDescription);
+                    }
+                });
+                var that = _this;
+                var recordingFormat = _this.inputNode.outputFormatForBus(0);
+                _this.inputNode.installTapOnBusBufferSizeFormatBlock(0, 1024, recordingFormat, function (buffer, when) {
+                    that.recognitionRequest.appendAudioPCMBuffer(buffer);
+                });
+                _this.audioEngine.prepare();
+                resolve(_this.audioEngine.startAndReturnError());
+            });
         });
     };
     SpeechRecognition.prototype.stopListening = function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            if (_this.recognizer === null) {
+            if (!_this.audioEngine.running) {
                 reject("Not running");
                 return;
             }
-            var loopHandler = new android.os.Handler(android.os.Looper.getMainLooper());
-            loopHandler.post(new java.lang.Runnable({
-                run: function () {
-                    _this.recognizer.stopListening();
-                    _this.recognizer.cancel();
-                    _this.recognizer.destroy();
-                    _this.recognizer = null;
-                    resolve();
-                }
-            }));
+            _this.audioEngine.stop();
+            _this.recognitionRequest.endAudio();
+            _this.audioSession.setCategoryError(AVAudioSessionCategoryPlayback);
+            _this.audioSession.setModeError(AVAudioSessionModeDefault);
+            _this.speechRecognizer = null;
+            _this.recognitionTask = null;
+            resolve();
         });
-    };
-    SpeechRecognition.prototype.wasPermissionGranted = function () {
-        var hasPermission = android.os.Build.VERSION.SDK_INT < 23;
-        if (!hasPermission) {
-            hasPermission = android.content.pm.PackageManager.PERMISSION_GRANTED ===
-                android.support.v4.content.ContextCompat.checkSelfPermission(utils.ad.getApplicationContext(), android.Manifest.permission.RECORD_AUDIO);
-        }
-        return hasPermission;
-    };
-    SpeechRecognition.prototype._requestPermission = function (onPermissionGranted, reject) {
-        this.onPermissionGranted = onPermissionGranted;
-        this.onPermissionRejected = reject;
-        android.support.v4.app.ActivityCompat.requestPermissions(application.android.foregroundActivity, [android.Manifest.permission.RECORD_AUDIO], 444);
     };
     return SpeechRecognition;
 }());
 exports.SpeechRecognition = SpeechRecognition;
-//# sourceMappingURL=speech-recognition.android.js.map
+//# sourceMappingURL=speech-recognition.ios.js.map
 
 /***/ }),
-/* 144 */
+/* 143 */
 /* exports provided: default */
 /* exports used: default */
 /*!**********************************************!*\
@@ -20080,14 +20174,14 @@ exports.SpeechRecognition = SpeechRecognition;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignment.vue */ 132);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_f86a44b8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-f86a44b8","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignment.vue */ 155);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignment.vue */ 131);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_f86a44b8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-f86a44b8","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignment.vue */ 154);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!css-loader!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-f86a44b8","scoped":false,"hasInlineConfig":false}!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Assignment.vue */ 138)
+  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!css-loader!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-f86a44b8","scoped":false,"hasInlineConfig":false}!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Assignment.vue */ 137)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20131,7 +20225,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 145 */
+/* 144 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************************************!*\
@@ -20140,10 +20234,10 @@ if (false) {(function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignments.vue */ 133);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_381339d2_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-381339d2","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignments.vue */ 152);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignments.vue */ 132);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_381339d2_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-381339d2","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignments.vue */ 151);
 var disposed = false
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20187,7 +20281,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 146 */
+/* 145 */
 /* exports provided: default */
 /* exports used: default */
 /*!**********************************!*\
@@ -20196,10 +20290,10 @@ if (false) {(function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Home.vue */ 134);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_9681c438_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-9681c438","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Home.vue */ 153);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Home.vue */ 133);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_9681c438_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-9681c438","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Home.vue */ 152);
 var disposed = false
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20243,7 +20337,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 147 */
+/* 146 */
 /* exports provided: default */
 /* exports used: default */
 /*!************************************!*\
@@ -20252,14 +20346,14 @@ if (false) {(function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Login.vue */ 135);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_dc03ccd0_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-dc03ccd0","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Login.vue */ 154);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Login.vue */ 134);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_dc03ccd0_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-dc03ccd0","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Login.vue */ 153);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-dc03ccd0","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Login.vue */ 141)
+  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-dc03ccd0","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Login.vue */ 140)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20303,7 +20397,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 148 */
+/* 147 */
 /* exports provided: default */
 /* exports used: default */
 /*!*******************************************!*\
@@ -20312,14 +20406,14 @@ if (false) {(function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginInitial.vue */ 136);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_122328bc_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-122328bc","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginInitial.vue */ 150);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginInitial.vue */ 135);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_122328bc_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-122328bc","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginInitial.vue */ 149);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-122328bc","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginInitial.vue */ 139)
+  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-122328bc","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginInitial.vue */ 138)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20363,7 +20457,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 149 */
+/* 148 */
 /* exports provided: default */
 /* exports used: default */
 /*!****************************************!*\
@@ -20372,14 +20466,14 @@ if (false) {(function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginMain.vue */ 137);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_15b7021e_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-15b7021e","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginMain.vue */ 151);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginMain.vue */ 136);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_15b7021e_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-15b7021e","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginMain.vue */ 150);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-15b7021e","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginMain.vue */ 140)
+  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-15b7021e","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginMain.vue */ 139)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 15)
+var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20423,7 +20517,7 @@ if (false) {(function () {
 
 
 /***/ }),
-/* 150 */
+/* 149 */
 /* exports provided: default */
 /* exports used: default */
 /*!****************************************************************************************************************************************************************************************************************************!*\
@@ -20436,7 +20530,7 @@ var esExports = { template: '  \n  <StackLayout ref=\"initialContainer\" class=\
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 151 */
+/* 150 */
 /* exports provided: default */
 /* exports used: default */
 /*!*************************************************************************************************************************************************************************************************************************!*\
@@ -20449,7 +20543,7 @@ var esExports = { template: '  \n  <StackLayout ref=\"mainContainer\" class=\"ma
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 152 */
+/* 151 */
 /* exports provided: default */
 /* exports used: default */
 /*!*********************************************************************************************************************************************************************************************************************************!*\
@@ -20462,7 +20556,7 @@ var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" b
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 153 */
+/* 152 */
 /* exports provided: default */
 /* exports used: default */
 /*!*******************************************************************************************************************************************************************************************************************!*\
@@ -20475,7 +20569,7 @@ var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" b
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 154 */
+/* 153 */
 /* exports provided: default */
 /* exports used: default */
 /*!*********************************************************************************************************************************************************************************************************************!*\
@@ -20488,7 +20582,7 @@ var esExports = { template: '  \n  <Page ref=\"page\" :class=\"pageClasses\" act
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 155 */
+/* 154 */
 /* exports provided: default */
 /* exports used: default */
 /*!*******************************************************************************************************************************************************************************************************************************!*\
@@ -20497,11 +20591,11 @@ var esExports = { template: '  \n  <Page ref=\"page\" :class=\"pageClasses\" act
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n          <ScrollView style=\"height: 100%\">\n              <StackLayout class=\"card\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <Button class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>\n                  <StackLayout class=\"transcription\" >\n                      <Label textWrap=\"true\" :text=\"assignment.Text\"></Label>\n                  </StackLayout>\n                  <Button class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  <activity-indicator :busy=\"isSpeaking\"></activity-indicator>\n                  <StackLayout class=\"shaded\">\n                      <Label #transcriptionLbl></Label>\n                  </StackLayout>\n                  <Button class=\"btn score\" text=\"Get my Score\"></Button>\n              </StackLayout>\n          </ScrollView>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
+var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <Button class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>\n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"25%\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span class=\"transcription\" :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  <ScrollView height=\"25%\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\" class=\"transcription\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 156 */
+/* 155 */
 /* no static exports found */
 /* all exports used */
 /*!*********************************************************************************!*\
@@ -20523,158 +20617,98 @@ exports.ensureValidValue = function (value, valueType) {
 //# sourceMappingURL=application-settings-common.js.map
 
 /***/ }),
-/* 157 */
-/* no static exports found */
-/* exports used: getString, setString */
-/*!**********************************************************************************!*\
-  !*** ../~/tns-core-modules/application-settings/application-settings.android.js ***!
-  \**********************************************************************************/
-/***/ (function(module, exports, __webpack_require__) {
-
-Object.defineProperty(exports, "__esModule", { value: true });
-var common = __webpack_require__(/*! ./application-settings-common */ 156);
-var application_1 = __webpack_require__(/*! ../application */ 2);
-var sharedPreferences;
-function ensureSharedPreferences() {
-    if (!sharedPreferences) {
-        sharedPreferences = application_1.getNativeApplication().getApplicationContext().getSharedPreferences("prefs.db", 0);
-    }
-}
-function verify(key) {
-    common.checkKey(key);
-    ensureSharedPreferences();
-}
-function hasKey(key) {
-    verify(key);
-    return sharedPreferences.contains(key);
-}
-exports.hasKey = hasKey;
-function getBoolean(key, defaultValue) {
-    verify(key);
-    if (hasKey(key)) {
-        return sharedPreferences.getBoolean(key, false);
-    }
-    return defaultValue;
-}
-exports.getBoolean = getBoolean;
-function getString(key, defaultValue) {
-    verify(key);
-    if (hasKey(key)) {
-        return sharedPreferences.getString(key, "");
-    }
-    return defaultValue;
-}
-exports.getString = getString;
-function getNumber(key, defaultValue) {
-    verify(key);
-    if (hasKey(key)) {
-        return sharedPreferences.getFloat(key, float(0.0));
-    }
-    return defaultValue;
-}
-exports.getNumber = getNumber;
-function setBoolean(key, value) {
-    verify(key);
-    common.ensureValidValue(value, "boolean");
-    var editor = sharedPreferences.edit();
-    editor.putBoolean(key, value);
-    editor.apply();
-}
-exports.setBoolean = setBoolean;
-function setString(key, value) {
-    verify(key);
-    common.ensureValidValue(value, "string");
-    var editor = sharedPreferences.edit();
-    editor.putString(key, value);
-    editor.apply();
-}
-exports.setString = setString;
-function setNumber(key, value) {
-    verify(key);
-    common.ensureValidValue(value, "number");
-    var editor = sharedPreferences.edit();
-    editor.putFloat(key, float(value));
-    editor.apply();
-}
-exports.setNumber = setNumber;
-function remove(key) {
-    verify(key);
-    var editor = sharedPreferences.edit();
-    editor.remove(key);
-    editor.apply();
-}
-exports.remove = remove;
-function clear() {
-    ensureSharedPreferences();
-    sharedPreferences.edit().clear().apply();
-}
-exports.clear = clear;
-exports.flush = function () {
-    return sharedPreferences.edit().commit();
-};
-//# sourceMappingURL=application-settings.android.js.map
-
-/***/ }),
-/* 158 */,
-/* 159 */,
-/* 160 */
+/* 156 */,
+/* 157 */,
+/* 158 */
 /* no static exports found */
 /* exports used: getConnectionType, connectionType */
-/*!******************************************************************!*\
-  !*** ../~/tns-core-modules/connectivity/connectivity.android.js ***!
-  \******************************************************************/
-/***/ (function(module, exports, __webpack_require__) {
+/*!**************************************************************!*\
+  !*** ../~/tns-core-modules/connectivity/connectivity.ios.js ***!
+  \**************************************************************/
+/***/ (function(module, exports) {
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var application_1 = __webpack_require__(/*! ../application */ 2);
 var connectionType;
 (function (connectionType) {
     connectionType[connectionType["none"] = 0] = "none";
     connectionType[connectionType["wifi"] = 1] = "wifi";
     connectionType[connectionType["mobile"] = 2] = "mobile";
 })(connectionType = exports.connectionType || (exports.connectionType = {}));
-var wifi = "wifi";
-var mobile = "mobile";
-function getConnectivityManager() {
-    return application_1.getNativeApplication().getApplicationContext().getSystemService(android.content.Context.CONNECTIVITY_SERVICE);
+function _createReachability(host) {
+    if (host) {
+        return SCNetworkReachabilityCreateWithName(null, host);
+    }
+    else {
+        var zeroAddress = new interop.Reference(sockaddr, {
+            sa_len: 16,
+            sa_family: 2
+        });
+        return SCNetworkReachabilityCreateWithAddress(null, zeroAddress);
+    }
 }
-function getActiveNetworkInfo() {
-    var connectivityManager = getConnectivityManager();
-    if (!connectivityManager) {
+function _getReachabilityFlags(host) {
+    var reachability = _createReachability(host);
+    var flagsRef = new interop.Reference();
+    var gotFlags = SCNetworkReachabilityGetFlags(reachability, flagsRef);
+    if (!gotFlags) {
         return null;
     }
-    return connectivityManager.getActiveNetworkInfo();
+    return flagsRef.value;
 }
-function getConnectionType() {
-    var activeNetworkInfo = getActiveNetworkInfo();
-    if (!activeNetworkInfo || !activeNetworkInfo.isConnected()) {
+function _getConnectionType(host) {
+    var flags = _getReachabilityFlags(host);
+    return _getConnectionTypeFromFlags(flags);
+}
+function _getConnectionTypeFromFlags(flags) {
+    if (!flags) {
         return connectionType.none;
     }
-    var type = activeNetworkInfo.getTypeName().toLowerCase();
-    if (type.indexOf(wifi) !== -1) {
-        return connectionType.wifi;
+    var isReachable = flags & 2;
+    var connectionRequired = flags & 4;
+    if (!isReachable || connectionRequired) {
+        return connectionType.none;
     }
-    if (type.indexOf(mobile) !== -1) {
+    var isWWAN = flags & 262144;
+    if (isWWAN) {
         return connectionType.mobile;
     }
-    return connectionType.none;
+    return connectionType.wifi;
+}
+function getConnectionType() {
+    return _getConnectionType();
 }
 exports.getConnectionType = getConnectionType;
+function _reachabilityCallback(target, flags, info) {
+    if (_connectionTypeChangedCallback) {
+        var newConnectionType = _getConnectionTypeFromFlags(flags);
+        _connectionTypeChangedCallback(newConnectionType);
+    }
+}
+var _reachabilityCallbackFunctionRef = new interop.FunctionReference(_reachabilityCallback);
+var _monitorReachabilityRef;
+var _connectionTypeChangedCallback;
 function startMonitoring(connectionTypeChangedCallback) {
-    var onReceiveCallback = function onReceiveCallback(context, intent) {
-        var newConnectionType = getConnectionType();
-        connectionTypeChangedCallback(newConnectionType);
-    };
-    application_1.android.registerBroadcastReceiver(android.net.ConnectivityManager.CONNECTIVITY_ACTION, onReceiveCallback);
+    if (!_monitorReachabilityRef) {
+        _monitorReachabilityRef = _createReachability();
+        _connectionTypeChangedCallback = connectionTypeChangedCallback;
+        SCNetworkReachabilitySetCallback(_monitorReachabilityRef, _reachabilityCallbackFunctionRef, null);
+        SCNetworkReachabilityScheduleWithRunLoop(_monitorReachabilityRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    }
 }
 exports.startMonitoring = startMonitoring;
 function stopMonitoring() {
-    application_1.android.unregisterBroadcastReceiver(android.net.ConnectivityManager.CONNECTIVITY_ACTION);
+    if (_monitorReachabilityRef) {
+        SCNetworkReachabilityUnscheduleFromRunLoop(_monitorReachabilityRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+        _monitorReachabilityRef = undefined;
+        _connectionTypeChangedCallback = undefined;
+    }
 }
 exports.stopMonitoring = stopMonitoring;
-//# sourceMappingURL=connectivity.android.js.map
+//# sourceMappingURL=connectivity.ios.js.map
 
 /***/ }),
+/* 159 */,
+/* 160 */,
 /* 161 */,
 /* 162 */,
 /* 163 */,
@@ -20694,44 +20728,182 @@ exports.stopMonitoring = stopMonitoring;
 /* 177 */,
 /* 178 */,
 /* 179 */,
-/* 180 */,
-/* 181 */,
-/* 182 */,
-/* 183 */
+/* 180 */
 /* no static exports found */
 /* all exports used */
-/*!***************************************************************************!*\
-  !*** ../~/tns-core-modules/ui/layouts/wrap-layout/wrap-layout.android.js ***!
-  \***************************************************************************/
+/*!***********************************************************************!*\
+  !*** ../~/tns-core-modules/ui/layouts/wrap-layout/wrap-layout.ios.js ***!
+  \***********************************************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 function __export(m) {
     for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
 }
 Object.defineProperty(exports, "__esModule", { value: true });
-var wrap_layout_common_1 = __webpack_require__(/*! ./wrap-layout-common */ 91);
-__export(__webpack_require__(/*! ./wrap-layout-common */ 91));
+var wrap_layout_common_1 = __webpack_require__(/*! ./wrap-layout-common */ 90);
+__export(__webpack_require__(/*! ./wrap-layout-common */ 90));
 var WrapLayout = (function (_super) {
     __extends(WrapLayout, _super);
     function WrapLayout() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super !== null && _super.apply(this, arguments) || this;
+        _this._lengths = new Array();
+        return _this;
     }
-    WrapLayout.prototype.createNativeView = function () {
-        return new org.nativescript.widgets.WrapLayout(this._context);
+    WrapLayout.getChildMeasureSpec = function (parentMode, parentLength, itemLength) {
+        if (itemLength > 0) {
+            return wrap_layout_common_1.layout.makeMeasureSpec(itemLength, wrap_layout_common_1.layout.EXACTLY);
+        }
+        else if (parentMode === wrap_layout_common_1.layout.UNSPECIFIED) {
+            return wrap_layout_common_1.layout.makeMeasureSpec(0, wrap_layout_common_1.layout.UNSPECIFIED);
+        }
+        else {
+            return wrap_layout_common_1.layout.makeMeasureSpec(parentLength, wrap_layout_common_1.layout.AT_MOST);
+        }
     };
-    WrapLayout.prototype[wrap_layout_common_1.orientationProperty.setNative] = function (value) {
-        this.nativeViewProtected.setOrientation(value === "vertical" ? org.nativescript.widgets.Orientation.vertical : org.nativescript.widgets.Orientation.horizontal);
+    WrapLayout.prototype.onMeasure = function (widthMeasureSpec, heightMeasureSpec) {
+        var _this = this;
+        _super.prototype.onMeasure.call(this, widthMeasureSpec, heightMeasureSpec);
+        var measureWidth = 0;
+        var measureHeight = 0;
+        var width = wrap_layout_common_1.layout.getMeasureSpecSize(widthMeasureSpec);
+        var widthMode = wrap_layout_common_1.layout.getMeasureSpecMode(widthMeasureSpec);
+        var height = wrap_layout_common_1.layout.getMeasureSpecSize(heightMeasureSpec);
+        var heightMode = wrap_layout_common_1.layout.getMeasureSpecMode(heightMeasureSpec);
+        var horizontalPaddingsAndMargins = this.effectivePaddingLeft + this.effectivePaddingRight + this.effectiveBorderLeftWidth + this.effectiveBorderRightWidth;
+        var verticalPaddingsAndMargins = this.effectivePaddingTop + this.effectivePaddingBottom + this.effectiveBorderTopWidth + this.effectiveBorderBottomWidth;
+        var availableWidth = widthMode === wrap_layout_common_1.layout.UNSPECIFIED ? Number.MAX_VALUE : width - horizontalPaddingsAndMargins;
+        var availableHeight = heightMode === wrap_layout_common_1.layout.UNSPECIFIED ? Number.MAX_VALUE : height - verticalPaddingsAndMargins;
+        var childWidthMeasureSpec = WrapLayout.getChildMeasureSpec(widthMode, availableWidth, this.effectiveItemWidth);
+        var childHeightMeasureSpec = WrapLayout.getChildMeasureSpec(heightMode, availableHeight, this.effectiveItemHeight);
+        var remainingWidth = availableWidth;
+        var remainingHeight = availableHeight;
+        this._lengths.length = 0;
+        var rowOrColumn = 0;
+        var maxLength = 0;
+        var isVertical = this.orientation === "vertical";
+        var useItemWidth = this.effectiveItemWidth > 0;
+        var useItemHeight = this.effectiveItemHeight > 0;
+        var itemWidth = this.effectiveItemWidth;
+        var itemHeight = this.effectiveItemHeight;
+        this.eachLayoutChild(function (child, last) {
+            var desiredSize = wrap_layout_common_1.View.measureChild(_this, child, childWidthMeasureSpec, childHeightMeasureSpec);
+            var childMeasuredWidth = useItemWidth ? itemWidth : desiredSize.measuredWidth;
+            var childMeasuredHeight = useItemHeight ? itemHeight : desiredSize.measuredHeight;
+            var isFirst = _this._lengths.length <= rowOrColumn;
+            if (isVertical) {
+                if (childMeasuredHeight > remainingHeight) {
+                    rowOrColumn++;
+                    maxLength = Math.max(maxLength, measureHeight);
+                    measureHeight = childMeasuredHeight;
+                    remainingHeight = availableHeight - childMeasuredHeight;
+                    _this._lengths[isFirst ? rowOrColumn - 1 : rowOrColumn] = childMeasuredWidth;
+                }
+                else {
+                    remainingHeight -= childMeasuredHeight;
+                    measureHeight += childMeasuredHeight;
+                }
+            }
+            else {
+                if (childMeasuredWidth > remainingWidth) {
+                    rowOrColumn++;
+                    maxLength = Math.max(maxLength, measureWidth);
+                    measureWidth = childMeasuredWidth;
+                    remainingWidth = availableWidth - childMeasuredWidth;
+                    _this._lengths[isFirst ? rowOrColumn - 1 : rowOrColumn] = childMeasuredHeight;
+                }
+                else {
+                    remainingWidth -= childMeasuredWidth;
+                    measureWidth += childMeasuredWidth;
+                }
+            }
+            if (isFirst) {
+                _this._lengths[rowOrColumn] = isVertical ? childMeasuredWidth : childMeasuredHeight;
+            }
+            else {
+                _this._lengths[rowOrColumn] = Math.max(_this._lengths[rowOrColumn], isVertical ? childMeasuredWidth : childMeasuredHeight);
+            }
+        });
+        if (isVertical) {
+            measureHeight = Math.max(maxLength, measureHeight);
+            this._lengths.forEach(function (value, index, array) {
+                measureWidth += value;
+            });
+        }
+        else {
+            measureWidth = Math.max(maxLength, measureWidth);
+            this._lengths.forEach(function (value, index, array) {
+                measureHeight += value;
+            });
+        }
+        measureWidth += horizontalPaddingsAndMargins;
+        measureHeight += verticalPaddingsAndMargins;
+        measureWidth = Math.max(measureWidth, this.effectiveMinWidth);
+        measureHeight = Math.max(measureHeight, this.effectiveMinHeight);
+        var widthAndState = wrap_layout_common_1.View.resolveSizeAndState(measureWidth, width, widthMode, 0);
+        var heightAndState = wrap_layout_common_1.View.resolveSizeAndState(measureHeight, height, heightMode, 0);
+        this.setMeasuredDimension(widthAndState, heightAndState);
     };
-    WrapLayout.prototype[wrap_layout_common_1.itemWidthProperty.setNative] = function (value) {
-        this.nativeViewProtected.setItemWidth(wrap_layout_common_1.Length.toDevicePixels(value, -1));
-    };
-    WrapLayout.prototype[wrap_layout_common_1.itemHeightProperty.setNative] = function (value) {
-        this.nativeViewProtected.setItemHeight(wrap_layout_common_1.Length.toDevicePixels(value, -1));
+    WrapLayout.prototype.onLayout = function (left, top, right, bottom) {
+        var _this = this;
+        _super.prototype.onLayout.call(this, left, top, right, bottom);
+        var isVertical = this.orientation === "vertical";
+        var paddingLeft = this.effectiveBorderLeftWidth + this.effectivePaddingLeft;
+        var paddingTop = this.effectiveBorderTopWidth + this.effectivePaddingTop;
+        var paddingRight = this.effectiveBorderRightWidth + this.effectivePaddingRight;
+        var paddingBottom = this.effectiveBorderBottomWidth + this.effectivePaddingBottom;
+        var childLeft = paddingLeft;
+        var childTop = paddingTop;
+        var childrenLength;
+        if (isVertical) {
+            childrenLength = bottom - top - paddingBottom;
+        }
+        else {
+            childrenLength = right - left - paddingRight;
+        }
+        var rowOrColumn = 0;
+        this.eachLayoutChild(function (child, last) {
+            var childHeight = child.getMeasuredHeight() + child.effectiveMarginTop + child.effectiveMarginBottom;
+            var childWidth = child.getMeasuredWidth() + child.effectiveMarginLeft + child.effectiveMarginRight;
+            var length = _this._lengths[rowOrColumn];
+            if (isVertical) {
+                childWidth = length;
+                childHeight = _this.effectiveItemHeight > 0 ? _this.effectiveItemHeight : childHeight;
+                var isFirst = childTop === paddingTop;
+                if (childTop + childHeight > childrenLength) {
+                    childTop = paddingTop;
+                    if (!isFirst) {
+                        childLeft += length;
+                    }
+                    rowOrColumn++;
+                    childWidth = _this._lengths[isFirst ? rowOrColumn - 1 : rowOrColumn];
+                }
+            }
+            else {
+                childWidth = _this.effectiveItemWidth > 0 ? _this.effectiveItemWidth : childWidth;
+                childHeight = length;
+                var isFirst = childLeft === paddingLeft;
+                if (childLeft + childWidth > childrenLength) {
+                    childLeft = paddingLeft;
+                    if (!isFirst) {
+                        childTop += length;
+                    }
+                    rowOrColumn++;
+                    childHeight = _this._lengths[isFirst ? rowOrColumn - 1 : rowOrColumn];
+                }
+            }
+            wrap_layout_common_1.View.layoutChild(_this, child, childLeft, childTop, childLeft + childWidth, childTop + childHeight);
+            if (isVertical) {
+                childTop += childHeight;
+            }
+            else {
+                childLeft += childWidth;
+            }
+        });
     };
     return WrapLayout;
 }(wrap_layout_common_1.WrapLayoutBase));
 exports.WrapLayout = WrapLayout;
-//# sourceMappingURL=wrap-layout.android.js.map
+//# sourceMappingURL=wrap-layout.ios.js.map
 
 /***/ })
-],[128]);
+],[127]);
