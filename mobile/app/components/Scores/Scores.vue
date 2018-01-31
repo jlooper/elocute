@@ -8,19 +8,7 @@
     <Image src="~/images/header"/>
         
     <ScrollView>
-        <StackLayout class="card">
-        <Label class="instruction" textWrap="true" text="Read this text aloud, slowly and clearly"></Label>
-        <StackLayout class="transcription" >
-            <Label textWrap="true" text="The quick brown fox jumped over the lazy dog."></Label>
-        </StackLayout>
-        <Button class="btn btn-rounded-lg start" @tap="startListening()" text="Start"></Button>
-        <Button class="btn btn-rounded-lg stop" @tap="stopListening()" text="Stop"></Button>
-        <activity-indicator :busy="isSpeaking"></activity-indicator>
-        <StackLayout class="shaded">
-            <Label #transcriptionLbl></Label>
-        </StackLayout>
-        <Button class="btn btn-rounded-lg score" text="Get my Score"></Button>
-    </StackLayout>
+        
     </ScrollView>
 
 </StackLayout>

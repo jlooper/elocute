@@ -12,7 +12,7 @@ import storeConf from '@/store/store.js'
 Vue.use(Router);
 
 let router = new Router({
-    mode: 'history',
+    pageRouting: true,
     routes: [
         {
           path: '/login',

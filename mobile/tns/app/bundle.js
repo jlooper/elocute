@@ -3514,7 +3514,7 @@ module.exports = firebase_common_1.firebase;
 "use strict";
 
 /*!
- * NativeScript-Vue v0.7.8
+ * NativeScript-Vue v0.7.12
  * (Using Vue v2.5.13)
  * (c) 2017-2018 rigor789
  * Released under the MIT license.
@@ -5354,6 +5354,386 @@ function nextTick (cb, ctx) {
 
 /*  */
 
+/*!
+ * isobject <https://github.com/jonschlinkert/isobject>
+ *
+ * Copyright (c) 2014-2017, Jon Schlinkert.
+ * Released under the MIT License.
+ */
+
+var isobject = function isObject(val) {
+  return val != null && typeof val === 'object' && Array.isArray(val) === false;
+};
+
+function isObjectObject(o) {
+  return isobject(o) === true
+    && Object.prototype.toString.call(o) === '[object Object]';
+}
+
+var isPlainObject$1 = function isPlainObject(o) {
+  var ctor,prot;
+
+  if (isObjectObject(o) === false) { return false; }
+
+  // If has modified constructor
+  ctor = o.constructor;
+  if (typeof ctor !== 'function') { return false; }
+
+  // If has modified prototype
+  prot = ctor.prototype;
+  if (isObjectObject(prot) === false) { return false; }
+
+  // If constructor does not have an Object-specific method
+  if (prot.hasOwnProperty('isPrototypeOf') === false) {
+    return false;
+  }
+
+  // Most likely a plain Object
+  return true;
+};
+
+var isExtendable = function isExtendable(val) {
+  return isPlainObject$1(val) || typeof val === 'function' || Array.isArray(val);
+};
+
+/*!
+ * assign-symbols <https://github.com/jonschlinkert/assign-symbols>
+ *
+ * Copyright (c) 2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+var assignSymbols = function(receiver, objects) {
+  var arguments$1 = arguments;
+
+  if (receiver === null || typeof receiver === 'undefined') {
+    throw new TypeError('expected first argument to be an object.');
+  }
+
+  if (typeof objects === 'undefined' || typeof Symbol === 'undefined') {
+    return receiver;
+  }
+
+  if (typeof Object.getOwnPropertySymbols !== 'function') {
+    return receiver;
+  }
+
+  var isEnumerable = Object.prototype.propertyIsEnumerable;
+  var target = Object(receiver);
+  var len = arguments.length, i = 0;
+
+  while (++i < len) {
+    var provider = Object(arguments$1[i]);
+    var names = Object.getOwnPropertySymbols(provider);
+
+    for (var j = 0; j < names.length; j++) {
+      var key = names[j];
+
+      if (isEnumerable.call(provider, key)) {
+        target[key] = provider[key];
+      }
+    }
+  }
+  return target;
+};
+
+var extendShallow = Object.assign || function(obj/* objects*/) {
+  var arguments$1 = arguments;
+
+  if (obj === null || typeof obj === 'undefined') {
+    throw new TypeError('Cannot convert undefined or null to object');
+  }
+  if (!isObject$1(obj)) {
+    obj = {};
+  }
+  for (var i = 1; i < arguments.length; i++) {
+    var val = arguments$1[i];
+    if (isString(val)) {
+      val = toObject$1(val);
+    }
+    if (isObject$1(val)) {
+      assign(obj, val);
+      assignSymbols(obj, val);
+    }
+  }
+  return obj;
+};
+
+function assign(a, b) {
+  for (var key in b) {
+    if (hasOwn$1(b, key)) {
+      a[key] = b[key];
+    }
+  }
+}
+
+function isString(val) {
+  return (val && typeof val === 'string');
+}
+
+function toObject$1(str) {
+  var obj = {};
+  for (var i in str) {
+    obj[i] = str[i];
+  }
+  return obj;
+}
+
+function isObject$1(val) {
+  return (val && typeof val === 'object') || isExtendable(val);
+}
+
+/**
+ * Returns true if the given `key` is an own property of `obj`.
+ */
+
+function hasOwn$1(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+var splitString = function(str, options, fn) {
+  if (typeof str !== 'string') {
+    throw new TypeError('expected a string');
+  }
+
+  if (typeof options === 'function') {
+    fn = options;
+    options = null;
+  }
+
+  // allow separator to be defined as a string
+  if (typeof options === 'string') {
+    options = { sep: options };
+  }
+
+  var opts = extendShallow({sep: '.'}, options);
+  var quotes = opts.quotes || ['"', "'", '`'];
+  var brackets;
+
+  if (opts.brackets === true) {
+    brackets = {
+      '<': '>',
+      '(': ')',
+      '[': ']',
+      '{': '}'
+    };
+  } else if (opts.brackets) {
+    brackets = opts.brackets;
+  }
+
+  var tokens = [];
+  var stack = [];
+  var arr = [''];
+  var sep = opts.sep;
+  var len = str.length;
+  var idx = -1;
+  var closeIdx;
+
+  function expected() {
+    if (brackets && stack.length) {
+      return brackets[stack[stack.length - 1]];
+    }
+  }
+
+  while (++idx < len) {
+    var ch = str[idx];
+    var next = str[idx + 1];
+    var tok = { val: ch, idx: idx, arr: arr, str: str };
+    tokens.push(tok);
+
+    if (ch === '\\') {
+      tok.val = keepEscaping(opts, str, idx) === true ? (ch + next) : next;
+      tok.escaped = true;
+      if (typeof fn === 'function') {
+        fn(tok);
+      }
+      arr[arr.length - 1] += tok.val;
+      idx++;
+      continue;
+    }
+
+    if (brackets && brackets[ch]) {
+      stack.push(ch);
+      var e = expected();
+      var i = idx + 1;
+
+      if (str.indexOf(e, i + 1) !== -1) {
+        while (stack.length && i < len) {
+          var s = str[++i];
+          if (s === '\\') {
+            s++;
+            continue;
+          }
+
+          if (quotes.indexOf(s) !== -1) {
+            i = getClosingQuote(str, s, i + 1);
+            continue;
+          }
+
+          e = expected();
+          if (stack.length && str.indexOf(e, i + 1) === -1) {
+            break;
+          }
+
+          if (brackets[s]) {
+            stack.push(s);
+            continue;
+          }
+
+          if (e === s) {
+            stack.pop();
+          }
+        }
+      }
+
+      closeIdx = i;
+      if (closeIdx === -1) {
+        arr[arr.length - 1] += ch;
+        continue;
+      }
+
+      ch = str.slice(idx, closeIdx + 1);
+      tok.val = ch;
+      tok.idx = idx = closeIdx;
+    }
+
+    if (quotes.indexOf(ch) !== -1) {
+      closeIdx = getClosingQuote(str, ch, idx + 1);
+      if (closeIdx === -1) {
+        arr[arr.length - 1] += ch;
+        continue;
+      }
+
+      if (keepQuotes(ch, opts) === true) {
+        ch = str.slice(idx, closeIdx + 1);
+      } else {
+        ch = str.slice(idx + 1, closeIdx);
+      }
+
+      tok.val = ch;
+      tok.idx = idx = closeIdx;
+    }
+
+    if (typeof fn === 'function') {
+      fn(tok, tokens);
+      ch = tok.val;
+      idx = tok.idx;
+    }
+
+    if (tok.val === sep && tok.split !== false) {
+      arr.push('');
+      continue;
+    }
+
+    arr[arr.length - 1] += tok.val;
+  }
+
+  return arr;
+};
+
+function getClosingQuote(str, ch, i, brackets) {
+  var idx = str.indexOf(ch, i);
+  if (str.charAt(idx - 1) === '\\') {
+    return getClosingQuote(str, ch, idx + 1);
+  }
+  return idx;
+}
+
+function keepQuotes(ch, opts) {
+  if (opts.keepDoubleQuotes === true && ch === '"') { return true; }
+  if (opts.keepSingleQuotes === true && ch === "'") { return true; }
+  return opts.keepQuotes;
+}
+
+function keepEscaping(opts, str, idx) {
+  if (typeof opts.keepEscaping === 'function') {
+    return opts.keepEscaping(str, idx);
+  }
+  return opts.keepEscaping === true || str[idx + 1] === '\\';
+}
+
+/*!
+ * is-extendable <https://github.com/jonschlinkert/is-extendable>
+ *
+ * Copyright (c) 2015, Jon Schlinkert.
+ * Licensed under the MIT License.
+ */
+
+var isExtendable$3 = function isExtendable(val) {
+  return typeof val !== 'undefined' && val !== null
+    && (typeof val === 'object' || typeof val === 'function');
+};
+
+var extendShallow$2 = function extend(o/* objects*/) {
+  var arguments$1 = arguments;
+
+  if (!isExtendable$3(o)) { o = {}; }
+
+  var len = arguments.length;
+  for (var i = 1; i < len; i++) {
+    var obj = arguments$1[i];
+
+    if (isExtendable$3(obj)) {
+      assign$1(o, obj);
+    }
+  }
+  return o;
+};
+
+function assign$1(a, b) {
+  for (var key in b) {
+    if (hasOwn$2(b, key)) {
+      a[key] = b[key];
+    }
+  }
+}
+
+/**
+ * Returns true if the given `key` is an own property of `obj`.
+ */
+
+function hasOwn$2(obj, key) {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+var setValue = function(obj, prop, val) {
+  if (!isExtendable$3(obj)) {
+    return obj;
+  }
+
+  if (Array.isArray(prop)) {
+    prop = [].concat.apply([], prop).join('.');
+  }
+
+  if (typeof prop !== 'string') {
+    return obj;
+  }
+
+  var keys = splitString(prop, {sep: '.', brackets: true});
+  var len = keys.length;
+  var idx = -1;
+  var current = obj;
+
+  while (++idx < len) {
+    var key = keys[idx];
+    if (idx !== len - 1) {
+      if (!isExtendable$3(current[key])) {
+        current[key] = {};
+      }
+      current = current[key];
+      continue;
+    }
+
+    if (isPlainObject$1(current[key]) && isPlainObject$1(val)) {
+      current[key] = extendShallow$2({}, current[key], val);
+    } else {
+      current[key] = val;
+    }
+  }
+
+  return obj;
+};
+
 var elementMap = new Map();
 
 var defaultViewMeta = {
@@ -5725,10 +6105,10 @@ ViewNode.prototype.setAttribute = function setAttribute (key, value) {
     if (XML_ATTRIBUTES.indexOf(key) !== -1) {
       this.nativeView._applyXmlAttribute(key, value);
     } else {
-      this.nativeView[key] = value;
+      setValue(this.nativeView, key, value);
     }
   } catch (e) {
-    throw new Error(((this.tagName) + " has no property " + key + ". (" + e + ")"))
+    // ignore
   }
 };
 
@@ -5977,6 +6357,12 @@ var DocumentNode = (function (ViewNode$$1) {
 
 var isReservedTag = makeMap('template', true);
 
+var _Vue;
+
+function setVue(Vue) {
+  _Vue = Vue;
+}
+
 var canBeLeftOpenTag = function(el) {
   return getViewMeta(el).canBeLeftOpenTag
 };
@@ -6004,7 +6390,7 @@ function isPage(el) {
 
 
 var VUE_VERSION = '2.5.13';
-var NS_VUE_VERSION = '0.7.8';
+var NS_VUE_VERSION = '0.7.12';
 
 var infoTrace = once(function () {
   console.log(
@@ -6013,7 +6399,7 @@ var infoTrace = once(function () {
 });
 
 function trace(message) {
-  if (Vue$3.config.silent) {
+  if (_Vue && _Vue.config.silent) {
     return infoTrace()
   }
 
@@ -6044,7 +6430,11 @@ function deepProxy(object, depth) {
   if ( depth === void 0 ) depth = 0;
 
   return new Proxy(object, {
-    get: function get() {
+    get: function get(target, key) {
+      if (key === 'toString') {
+        return function () { return ''; }
+      }
+
       if (depth > 10) {
         throw new Error('deepProxy over 10 deep.')
       }
@@ -8541,7 +8931,7 @@ function updateStyle(oldVnode, vnode) {
 
   // handle array syntax
   if (Array.isArray(style)) {
-    style = vnode.data.style = toObject$1(style);
+    style = vnode.data.style = toObject$2(style);
   }
 
   // clone the style for future updates,
@@ -8561,7 +8951,7 @@ function updateStyle(oldVnode, vnode) {
   }
 }
 
-function toObject$1(arr) {
+function toObject$2(arr) {
   var res = {};
   for (var i = 0; i < arr.length; i++) {
     if (arr[i]) {
@@ -13194,105 +13584,11 @@ Object.defineProperty(Vue$3.prototype, '$ssrContext', {
 Vue$3.version = '2.5.13';
 
 var ActionBar = {
-  name: 'action-bar',
-
-  template: "<native-action-bar ref=\"actionBar\"><slot></slot></native-action-bar>",
-
-  props: {
-    title: {
-      type: String,
-      required: false
-    }
-  },
-
-  mounted: function mounted() {
-    var this$1 = this;
-
-    this.$nextTick(function () {
-      if (this$1.$parent.$el.tagName !== 'page') {
-        warn(
-          'Make sure you are placing the <ActionBar> component as a direct child of a <Page> element.'
-        );
-        return
-      }
-
-      var page$$1 = this$1.$parent.$el.nativeView;
-
-      page$$1.actionBar = this$1.$refs.actionBar.nativeView;
-      page$$1.actionBarHidden = false;
-      if (this$1.title) {
-        this$1.$refs.actionBar.setAttribute('title', this$1.title);
-      }
-      page$$1.actionBar.update();
-    });
-  },
-
-  watch: {
-    title: function title(newVal) {
-      this.$refs.actionBar.setAttribute('title', newVal);
-    }
-  }
+  template: "\n    <native-action-bar ~actionBar v-bind=\"$attrs\" v-on=\"$listeners\">\n        <slot></slot>\n    </native-action-bar>\n  "
 }
 
 var ActionItem = {
-  name: 'action-item',
-
-  template: "\n    <native-action-item ref=\"actionItem\" @tap=\"onTap\">\n      <slot></slot>\n    </native-action-item>\n  ",
-
-  props: {
-    text: {
-      type: String
-    },
-    icon: {
-      type: String
-    },
-    'android.position': {
-      type: String
-    },
-    'android.systemIcon': {
-      type: String
-    },
-    'ios.position': {
-      type: String
-    },
-    'ios.systemIcon': {
-      type: String | Number
-    }
-  },
-
-  mounted: function mounted() {
-    var _nativeView = this.$refs.actionItem.nativeView;
-
-    if (this.text) {
-      _nativeView.text = this.text;
-    }
-
-    if (this.icon) {
-      _nativeView.icon = this.icon;
-    }
-
-    if (_nativeView.android && this['android.systemIcon']) {
-      _nativeView.android.systemIcon = this['android.systemIcon'];
-    }
-
-    if (_nativeView.android && this['android.position']) {
-      _nativeView.android.position = this['android.position'];
-    }
-
-    if (_nativeView.ios && this['ios.systemIcon']) {
-      _nativeView.ios.systemIcon = this['ios.systemIcon'];
-    }
-
-    if (_nativeView.ios && this['ios.position']) {
-      _nativeView.ios.position = this['ios.position'];
-    }
-  },
-
-  methods: {
-    onTap: function onTap(args) {
-      this.$emit('tap', args);
-    }
-  }
+  template: "\n    <native-action-item ref=\"actionItem\" v-bind=\"$attrs\" v-on=\"$listeners\">\n      <slot></slot>\n    </native-action-item>\n  "
 }
 
 var VUE_VIEW = '__vueVNodeRef__';
@@ -13511,51 +13807,7 @@ function getItemContext(item, index, alias, index_alias) {
 }
 
 var NavigationButton = {
-  name: 'navigation-button',
-
-  template: "<native-navigation-button ref=\"navigationButton\" @tap=\"onTap\" />",
-
-  props: {
-    text: {
-      type: String
-    },
-    'android.systemIcon': {
-      type: String
-    }
-  },
-
-  mounted: function mounted() {
-    var _nativeView = this.$refs.navigationButton.nativeView;
-
-    if (this.text) {
-      _nativeView.text = this.text;
-    }
-
-    if (_nativeView.android && this['android.systemIcon']) {
-      _nativeView.android.systemIcon = this['android.systemIcon'];
-    }
-  },
-
-  methods: {
-    onTap: function onTap(args) {
-      this.$emit('tap', args);
-    }
-  }
-}
-
-var RouterPage = {
-  name: 'router-page',
-  functional: true,
-
-  render: function render(h, ref) {
-    var parent = ref.parent;
-
-    if (!parent.__is_root__) {
-      warn('<router-page> should be a direct child of the root instance.');
-    }
-
-    parent.$options.pageRouting = true;
-  }
+  template: "<native-navigation-button v-bind=\"$attrs\" v-on=\"$listeners\" />"
 }
 
 var TabView = {
@@ -13625,7 +13877,6 @@ var platformComponents = {
   ActionItem: ActionItem,
   ListView: ListView,
   NavigationButton: NavigationButton,
-  RouterPage: RouterPage,
   TabView: TabView,
   TabViewItem: TabViewItem,
   VTemplate: VTemplate
@@ -13766,12 +14017,12 @@ var arrayMap = function (xs, f) {
     var res = [];
     for (var i = 0; i < xs.length; i++) {
         var x = xs[i];
-        if (hasOwn$2.call(xs, i)) { res.push(f(x, i, xs)); }
+        if (hasOwn$4.call(xs, i)) { res.push(f(x, i, xs)); }
     }
     return res;
 };
 
-var hasOwn$2 = Object.prototype.hasOwnProperty;
+var hasOwn$4 = Object.prototype.hasOwnProperty;
 
 var indexOf = [].indexOf;
 
@@ -13787,7 +14038,7 @@ var isarray = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-var hasOwn$3 = Object.prototype.hasOwnProperty;
+var hasOwn$5 = Object.prototype.hasOwnProperty;
 var toString$1 = Object.prototype.toString;
 
 var foreach = function forEach (obj, fn, ctx) {
@@ -13801,14 +14052,14 @@ var foreach = function forEach (obj, fn, ctx) {
         }
     } else {
         for (var k in obj) {
-            if (hasOwn$3.call(obj, k)) {
+            if (hasOwn$5.call(obj, k)) {
                 fn.call(ctx, obj[k], k, obj);
             }
         }
     }
 };
 
-var hasOwn$4 = Object.prototype.hasOwnProperty;
+var hasOwn$6 = Object.prototype.hasOwnProperty;
 
 var arrayReduce = function (xs, f, acc) {
     var hasAcc = arguments.length >= 3;
@@ -13816,7 +14067,7 @@ var arrayReduce = function (xs, f, acc) {
     if (xs.reduce) { return xs.reduce(f); }
     
     for (var i = 0; i < xs.length; i++) {
-        if (!hasOwn$4.call(xs, i)) { continue; }
+        if (!hasOwn$6.call(xs, i)) { continue; }
         if (!hasAcc) {
             acc = xs[i];
             hasAcc = true;
@@ -13827,7 +14078,7 @@ var arrayReduce = function (xs, f, acc) {
     return acc;
 };
 
-var hasOwn$5 = Object.prototype.hasOwnProperty;
+var hasOwn$7 = Object.prototype.hasOwnProperty;
 var toString$3 = Object.prototype.toString;
 
 var isFunction$1 = function (fn) {
@@ -13852,7 +14103,7 @@ var foreach$2 = function forEach(obj, fn) {
 		}
 	} else {
 		for (k in obj) {
-			if (hasOwn$5.call(obj, k)) {
+			if (hasOwn$7.call(obj, k)) {
 				if (context === null) {
 					fn(obj[k], k, obj);
 				} else {
@@ -14974,7 +15225,7 @@ function isFunction(arg) {
   return typeof arg === 'function';
 }
 
-function isString(arg) {
+function isString$1(arg) {
   return typeof arg === 'string';
 }
 
@@ -14986,25 +15237,25 @@ function isNull(arg) {
   return arg === null;
 }
 
-function hasOwn$1(obj, prop) {
+function hasOwn$3(obj, prop) {
   return Object.prototype.hasOwnProperty.call(obj, prop);
 }
 
 function isRegExp$1(re) {
-  return isObject$1(re) && objectToString(re) === '[object RegExp]';
+  return isObject$4(re) && objectToString(re) === '[object RegExp]';
 }
 
-function isObject$1(arg) {
+function isObject$4(arg) {
   return typeof arg === 'object' && arg !== null;
 }
 
 function isError(e) {
-  return isObject$1(e) &&
+  return isObject$4(e) &&
       (objectToString(e) === '[object Error]' || e instanceof Error);
 }
 
 function isDate(d) {
-  return isObject$1(d) && objectToString(d) === '[object Date]';
+  return isObject$4(d) && objectToString(d) === '[object Date]';
 }
 
 function objectToString(o) {
@@ -15024,7 +15275,7 @@ function arrayToHash(array) {
 function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
   var output = [];
   for (var i = 0, l = value.length; i < l; ++i) {
-    if (hasOwn$1(value, String(i))) {
+    if (hasOwn$3(value, String(i))) {
       output.push(formatProperty(ctx, value, recurseTimes, visibleKeys,
           String(i), true));
     } else {
@@ -15055,7 +15306,7 @@ function formatValue(ctx, value, recurseTimes) {
       // Also filter out any prototype objects using the circular check.
       !(value.constructor && value.constructor.prototype === value)) {
     var ret = value.inspect(recurseTimes, ctx);
-    if (!isString(ret)) {
+    if (!isString$1(ret)) {
       ret = formatValue(ctx, ret, recurseTimes);
     }
     return ret;
@@ -15173,7 +15424,7 @@ function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
       str = ctx.stylize('[Setter]', 'special');
     }
   }
-  if (!hasOwn$1(visibleKeys, key)) {
+  if (!hasOwn$3(visibleKeys, key)) {
     name = '[' + key + ']';
   }
   if (!str) {
@@ -15220,7 +15471,7 @@ function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
 function formatPrimitive(ctx, value) {
   if (isUndefined(value))
     { return ctx.stylize('undefined', 'undefined'); }
-  if (isString(value)) {
+  if (isString$1(value)) {
     var simple = '\'' + json3.stringify(value).replace(/^"|"$/g, '')
                                              .replace(/'/g, "\\'")
                                              .replace(/\\"/g, '"') + '\'';
@@ -15255,7 +15506,7 @@ function reduceToSingleString(output, base, braces) {
 
 function _extend(origin, add) {
   // Don't do anything if add isn't an object
-  if (!add || !isObject$1(add)) { return origin; }
+  if (!add || !isObject$4(add)) { return origin; }
 
   var keys = objectKeys(add);
   var i = keys.length;
@@ -15495,7 +15746,13 @@ var RouterPlugin = {
         }
 
         var router = this.$options.router;
+        var isPageRouting = router.options.pageRouting;
         var self = this;
+
+        if (!isPageRouting) {
+          // if not in page mode, we don't care
+          return
+        }
 
         patchRouter(router, Vue);
 
@@ -15503,6 +15760,7 @@ var RouterPlugin = {
         this.$start = function () {
           this$1.__is_root__ = true;
           this$1.__started__ = true; // skips the default start procedure
+          this$1.$options.render = function () {}; // removes warning for no render / template
 
           // Mount the root component
           var placeholder = Vue.$document.createComment('placeholder');
@@ -15531,10 +15789,10 @@ var RouterPlugin = {
 global.process = global.process || {};
 global.process.env = global.process.env || {};
 
-// import DecoderPlugin from './plugins/decoder-plugin'
+setVue(Vue$3);
+
 Vue$3.use(ModalPlugin);
 Vue$3.use(NavigatorPlugin);
-// Vue.use(DecoderPlugin)
 Vue$3.use(RouterPlugin);
 
 console.log = (function(log, inspect, Vue) {
@@ -15542,7 +15800,11 @@ console.log = (function(log, inspect, Vue) {
     return log.apply(
       this,
       Array.prototype.map.call(arguments, function(arg) {
-        return inspect(arg, { depth: 1, colors: Vue.config.debug })
+        return inspect(arg, {
+          depth: 2,
+          colors: Vue.config.debug,
+          showHidden: true
+        }).replace(/\\n/g, '\n')
       })
     )
   }
@@ -15575,18 +15837,10 @@ global.__onLiveSyncCore = function () {
     if (frame$$1.currentPage && frame$$1.currentPage.modal) {
       frame$$1.currentPage.modal.closeModal();
     }
-    // Todo: make sure that the before-livesync hook is installed, because otherwise the page will always get reloaded.
-    // const currentEntry = frame._currentEntry && frame._currentEntry.entry
-    // if (currentEntry) {
 
-    // const newEntry = {
-    //   animated: false,
-    //   clearHistory: true,
-    //   create: () => {  } ,
-    //   backstackVisible: currentEntry.backstackVisible
-    // }
-    // frame.navigate(newEntry)
-    // }
+    if (frame$$1.currentPage) {
+      frame$$1.currentPage.addCssFile(application__default.getCssFileName());
+    }
   }
 };
 
@@ -18960,7 +19214,7 @@ if (inBrowser && window.Vue) {
 __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default.a.use(__WEBPACK_IMPORTED_MODULE_1_vue_router__["a" /* default */]);
 
 var router = new __WEBPACK_IMPORTED_MODULE_1_vue_router__["a" /* default */]({
-  mode: 'history',
+  pageRouting: true,
   routes: [{
     path: '/login',
     component: __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__["a" /* default */],
@@ -20591,7 +20845,7 @@ var esExports = { template: '  \n  <Page ref=\"page\" :class=\"pageClasses\" act
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <Button class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>\n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"25%\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span class=\"transcription\" :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  <ScrollView height=\"25%\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\" class=\"transcription\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
+var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <Button class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),

@@ -1,6 +1,6 @@
 @import '~/nativescript-theme-core/css/core.light.css';
 
-.page {
+Page {
     background-color: #8FD2C6;
     font-family: "Quicksand";
     font-size: 20;
@@ -14,6 +14,7 @@
     padding: 0;
 }
 .card {
+    font-family: "Quicksand";
     background-color: #F5D1E9; 
     border-radius: 3;
     margin: 10;

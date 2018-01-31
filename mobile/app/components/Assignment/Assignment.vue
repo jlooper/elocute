@@ -11,19 +11,19 @@
             <StackLayout class="card" height="100%">
                 <Label class="instruction" textWrap="true" text="Press the 'start' button, then read this text aloud, slowly and clearly"></Label>
                 <Button class="btn start" @tap="startListening()" text="Start"></Button>
-                <ActivityIndicator :busy="isSpeaking" rowSpan="2"></ActivityIndicator>
-                <ScrollView height="25%">
+                <ScrollView height="20%" class="transcription">
                     <Label verticalAlignment="top" horizontalAlignment="left" textWrap="true">
                         <FormattedString>
-                            <Span class="transcription" :text="assignment.Text"></Span>
+                            <Span :text="assignment.Text"></Span>
                         </FormattedString>
                     </Label>
                 </ScrollView>
                 <Button class="btn stop" @tap="stopListening()" text="Stop"></Button>
-                <ScrollView height="25%">
+                <ActivityIndicator :busy="isSpeaking" rowSpan="2"></ActivityIndicator>
+                <ScrollView height="20%" class="transcription">
                     <Label verticalAlignment="top" horizontalAlignment="left" textWrap="true">
                         <FormattedString>
-                            <Span ref="transcriptionLbl" class="transcription"></Span>
+                            <Span ref="transcriptionLbl"></Span>
                         </FormattedString>
                     </Label>
                 </ScrollView>
@@ -169,10 +169,9 @@ export default {
     
 }
 .transcription {
-    margin: 10 0;
-    padding: 10;
+    margin: 5;
     border-radius: 5;
-    height: 100;
+    height: 100%;
     border-color: #F3F3F3;
     background-color: #F3F3F3;
     font-size: 15;
