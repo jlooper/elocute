@@ -16126,13 +16126,13 @@ var actions = {
       if (result.error) {
         console.log(result.error);
       } else {
-        console.log(JSON.stringify(result.value));
         var obj = result.value;
         var assignments = Object.keys(obj || {}).map(function (key) {
           return {
             id: key,
             Title: obj[key].Title,
-            Text: obj[key].Text
+            Text: obj[key].Text,
+            Language: obj[key].Language
           };
         });
         commit('setAssignments', assignments);
@@ -19479,6 +19479,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 //
 //
 //
+//
+//
+//
+//
 
 
 
@@ -19555,6 +19559,10 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       }
       return costs[s2.length];
     },
+    logout: function logout() {
+      firebaseService.logout();
+      this.$router.push('/login');
+    },
     goBack: function goBack() {
       this.$navigateBack();
     },
@@ -19567,7 +19575,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
           _this.$refs.transcriptionLbl.nativeView.text = transcription.text;
         },
         returnPartialResults: true,
-        locale: 'FR'
+        locale: this.assignment.Language
       }).then(function (started) {}, function (errorMessage) {
         console.log('Error while trying to start listening: ' + errorMessage);
       });
@@ -19580,10 +19588,9 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
       });
     },
     getScore: function getScore() {
-      //compare
-      console.log(this.assignment.Text, this.$refs.transcriptionLbl.nativeView.text);
+      this.stopListening();
       var score = this.similarity(this.assignment.Text, this.$refs.transcriptionLbl.nativeView.text);
-      console.log(score);
+      alert("Score: " + Math.round(score * 100) + ' %');
     }
   }
 });
@@ -20845,7 +20852,7 @@ var esExports = { template: '  \n  <Page ref=\"page\" :class=\"pageClasses\" act
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <Button class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
+var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  \n                  <GridLayout columns=\"*,*\" rows=\"auto\">\n                      <Button col=\"0\" row=\"0\" class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>                \n                      <Button col=\"1\" row=\"0\" class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  </GridLayout>\n                  \n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),

@@ -10,7 +10,6 @@
         <Image src="~/images/header.png"/>        
             <StackLayout class="card" height="100%">
                 <Label class="instruction" textWrap="true" text="Press the 'start' button, then read this text aloud, slowly and clearly"></Label>
-                <Button class="btn start" @tap="startListening()" text="Start"></Button>
                 <ScrollView height="20%" class="transcription">
                     <Label verticalAlignment="top" horizontalAlignment="left" textWrap="true">
                         <FormattedString>
@@ -18,7 +17,12 @@
                         </FormattedString>
                     </Label>
                 </ScrollView>
-                <Button class="btn stop" @tap="stopListening()" text="Stop"></Button>
+                
+                <GridLayout columns="*,*" rows="auto">
+                    <Button col="0" row="0" class="btn start" @tap="startListening()" text="Start"></Button>                
+                    <Button col="1" row="0" class="btn stop" @tap="stopListening()" text="Stop"></Button>
+                </GridLayout>
+                
                 <ActivityIndicator :busy="isSpeaking" rowSpan="2"></ActivityIndicator>
                 <ScrollView height="20%" class="transcription">
                     <Label verticalAlignment="top" horizontalAlignment="left" textWrap="true">
@@ -37,7 +41,6 @@
 
 import { mapState, mapGetters } from 'vuex';
 import { SpeechRecognition, SpeechRecognitionTranscription, SpeechRecognitionOptions } from "nativescript-speech-recognition";
-
 
 export default {
   name: 'assignment',
@@ -117,8 +120,12 @@ export default {
         }
         return costs[s2.length];
       },
-      goBack() {
-        this.$navigateBack()
+      logout() {
+        firebaseService.logout()
+        this.$router.push('/login')
+      },
+        goBack() {
+            this.$navigateBack()
       },
       startListening() {
         this.isSpeaking = true;
@@ -128,7 +135,7 @@ export default {
               this.$refs.transcriptionLbl.nativeView.text = transcription.text;
             },
             returnPartialResults: true,
-            locale: 'FR'
+            locale: this.assignment.Language
           }
         ).then((started) => {
             }, (errorMessage) => {
@@ -141,18 +148,17 @@ export default {
         })
       },
       getScore() {
-          //compare
-           console.log(this.assignment.Text, this.$refs.transcriptionLbl.nativeView.text)
-           let score = this.similarity(this.assignment.Text,this.$refs.transcriptionLbl.nativeView.text)
-           console.log(score)
-      }
+          this.stopListening();
+          let score = this.similarity(this.assignment.Text,this.$refs.transcriptionLbl.nativeView.text);
+          alert("Score: "+Math.round(score*100)+' %');
+       }        
     }
 }
 </script>
 
 <style>
 .btn {
-    font-family: "Quicksand";
+    font-family: "Quicksand";    
     font-size: 20;
     border-radius: 5;
     color: #000000;
@@ -169,6 +175,7 @@ export default {
     
 }
 .transcription {
+    font-family: "Quicksand";
     margin: 5;
     border-radius: 5;
     height: 100%;
@@ -177,7 +184,6 @@ export default {
     font-size: 15;
 }
 .instruction {
-    font-family: "Quicksand";
     text-align: center;
 }
 </style>

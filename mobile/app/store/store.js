@@ -93,12 +93,12 @@ Vue.use(Vuex);
         if (result.error) {
           console.log(result.error)
         } else {
-          console.log(JSON.stringify(result.value));
           const obj = result.value;
           const assignments = Object.keys(obj || {}).map(key => ({
             id: key,
             Title: obj[key].Title,
-            Text: obj[key].Text
+            Text: obj[key].Text,
+            Language: obj[key].Language
           }));
           commit('setAssignments', assignments);
         }

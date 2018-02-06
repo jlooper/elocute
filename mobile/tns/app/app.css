@@ -183,7 +183,7 @@ TextField {
 }
 
 .btn {
-    font-family: "Quicksand";
+    font-family: "Quicksand";    
     font-size: 20;
     border-radius: 5;
     color: #000000;
@@ -198,6 +198,7 @@ TextField {
     background-color: #F3F3F3;
 }
 .transcription {
+    font-family: "Quicksand";
     margin: 5;
     border-radius: 5;
     height: 100%;
@@ -206,6 +207,5 @@ TextField {
     font-size: 15;
 }
 .instruction {
-    font-family: "Quicksand";
     text-align: center;
 }
