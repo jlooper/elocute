@@ -31,7 +31,7 @@
                         </FormattedString>
                     </Label>
                 </ScrollView>
-                <Button class="btn score" @tap="getScore()" text="Get my Score"></Button>
+                <Button class="btn stop" @tap="getScore()" text="Get my Score"></Button>
             </StackLayout>
     </StackLayout>
 </StackLayout>
@@ -168,11 +168,6 @@ export default {
 }
 .stop {
     background-color: #90D2C5;
-}
-
-.score {
-    background-color: #F3F3F3;
-    
 }
 .transcription {
     font-family: "Quicksand";

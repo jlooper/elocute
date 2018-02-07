@@ -1,10 +1,10 @@
 import Vue from 'nativescript-vue';
 import Router from 'vue-router';
 
-import Home from '@/components/Home/Home.vue'
-import Login from '@/components/Login/Login.vue'
-import Assignments from '@/components/Assignments/Assignments.vue'
-import Assignment from '@/components/Assignment/Assignment.vue'
+import Home from '@/components/Home'
+import Login from '@/components/Login'
+import Assignments from '@/components/Assignments'
+import Assignment from '@/components/Assignment'
 
 import storeConf from '@/store/store.js'
 

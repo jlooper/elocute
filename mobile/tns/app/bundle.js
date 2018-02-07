@@ -19196,10 +19196,10 @@ if (inBrowser && window.Vue) {
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue__ = __webpack_require__(/*! nativescript-vue */ 32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_nativescript_vue___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_nativescript_vue__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 120);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_Home_Home_vue__ = __webpack_require__(/*! @/components/Home/Home.vue */ 145);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__ = __webpack_require__(/*! @/components/Login/Login.vue */ 146);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__components_Assignments_Assignments_vue__ = __webpack_require__(/*! @/components/Assignments/Assignments.vue */ 144);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__components_Assignment_Assignment_vue__ = __webpack_require__(/*! @/components/Assignment/Assignment.vue */ 143);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__components_Home__ = __webpack_require__(/*! @/components/Home */ 145);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__components_Login__ = __webpack_require__(/*! @/components/Login */ 146);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__components_Assignments__ = __webpack_require__(/*! @/components/Assignments */ 144);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__components_Assignment__ = __webpack_require__(/*! @/components/Assignment */ 143);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__store_store_js__ = __webpack_require__(/*! @/store/store.js */ 54);
 
 
@@ -19217,19 +19217,19 @@ var router = new __WEBPACK_IMPORTED_MODULE_1_vue_router__["a" /* default */]({
   pageRouting: true,
   routes: [{
     path: '/login',
-    component: __WEBPACK_IMPORTED_MODULE_3__components_Login_Login_vue__["a" /* default */],
+    component: __WEBPACK_IMPORTED_MODULE_3__components_Login__["a" /* default */],
     meta: { hiddenActionBar: true }
   }, {
     path: '/home',
-    component: __WEBPACK_IMPORTED_MODULE_2__components_Home_Home_vue__["a" /* default */],
+    component: __WEBPACK_IMPORTED_MODULE_2__components_Home__["a" /* default */],
     meta: { requiresAuth: true }
   }, {
     path: '/assignments/:id',
-    component: __WEBPACK_IMPORTED_MODULE_4__components_Assignments_Assignments_vue__["a" /* default */],
+    component: __WEBPACK_IMPORTED_MODULE_4__components_Assignments__["a" /* default */],
     meta: { requiresAuth: true }
   }, {
     path: '/assignment/:id',
-    component: __WEBPACK_IMPORTED_MODULE_5__components_Assignment_Assignment_vue__["a" /* default */],
+    component: __WEBPACK_IMPORTED_MODULE_5__components_Assignment__["a" /* default */],
     meta: { requiresAuth: true }
   }, { path: '*', redirect: '/login' }]
 });
@@ -19433,9 +19433,9 @@ function alert(message) {
 /* 131 */
 /* exports provided: default */
 /* exports used: default */
-/*!*************************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Assignment/Assignment.vue ***!
-  \*************************************************************************************************************************************/
+/*!**************************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Assignment.vue ***!
+  \**************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19599,13 +19599,13 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 /* 132 */
 /* exports provided: default */
 /* exports used: default */
-/*!***************************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Assignments/Assignments.vue ***!
-  \***************************************************************************************************************************************/
+/*!***************************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Assignments.vue ***!
+  \***************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../services/FirebaseService */ 33);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vue_router__ = __webpack_require__(/*! vue-router */ 120);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_vuex__ = __webpack_require__(/*! vuex */ 15);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
@@ -19671,13 +19671,13 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /* 133 */
 /* exports provided: default */
 /* exports used: default */
-/*!*************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Home/Home.vue ***!
-  \*************************************************************************************************************************/
+/*!********************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Home.vue ***!
+  \********************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService__ = __webpack_require__(/*! ../services/FirebaseService */ 33);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_vuex__ = __webpack_require__(/*! vuex */ 15);
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
@@ -19740,9 +19740,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /* 134 */
 /* exports provided: default */
 /* exports used: default */
-/*!***************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Login/Login.vue ***!
-  \***************************************************************************************************************************/
+/*!*********************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Login.vue ***!
+  \*********************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19810,9 +19810,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /* 135 */
 /* exports provided: default */
 /* exports used: default */
-/*!**********************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Login/LoginInitial.vue ***!
-  \**********************************************************************************************************************************/
+/*!****************************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/LoginInitial.vue ***!
+  \****************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19850,9 +19850,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /* 136 */
 /* exports provided: default */
 /* exports used: default */
-/*!*******************************************************************************************************************************!*\
-  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/Login/LoginMain.vue ***!
-  \*******************************************************************************************************************************/
+/*!*************************************************************************************************************************!*\
+  !*** ../~/babel-loader/lib!../~/ns-vue-loader/lib/selector.js?type=script&index=0&bustCache!./components/LoginMain.vue ***!
+  \*************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -19864,9 +19864,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_0__services_FirebaseService_
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_2_tns_core_modules_color__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity__ = __webpack_require__(/*! tns-core-modules/connectivity */ 158);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_3_tns_core_modules_connectivity__);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_User__ = __webpack_require__(/*! ../../models/User */ 128);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService__ = __webpack_require__(/*! ../../services/FirebaseService */ 33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_alert__ = __webpack_require__(/*! ../../utils/alert */ 129);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__models_User__ = __webpack_require__(/*! ../models/User */ 128);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService__ = __webpack_require__(/*! ../services/FirebaseService */ 33);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__utils_alert__ = __webpack_require__(/*! ../utils/alert */ 129);
 //
 //
 //
@@ -20040,9 +20040,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 /* 137 */
 /* no static exports found */
 /* all exports used */
-/*!***************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!../~/css-loader!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-f86a44b8","scoped":false,"hasInlineConfig":false}!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Assignment/Assignment.vue ***!
-  \***************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!****************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!../~/css-loader!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-00373be8","scoped":false,"hasInlineConfig":false}!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Assignment.vue ***!
+  \****************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
@@ -20051,9 +20051,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 /* 138 */
 /* no static exports found */
 /* all exports used */
-/*!*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-122328bc","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Login/LoginInitial.vue ***!
-  \*******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-0ea21e14","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/LoginInitial.vue ***!
+  \*************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
@@ -20062,9 +20062,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 /* 139 */
 /* no static exports found */
 /* all exports used */
-/*!****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-15b7021e","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Login/LoginMain.vue ***!
-  \****************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-5be630f7","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/LoginMain.vue ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
@@ -20073,9 +20073,9 @@ var firebaseService = new __WEBPACK_IMPORTED_MODULE_5__services_FirebaseService_
 /* 140 */
 /* no static exports found */
 /* all exports used */
-/*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-dc03ccd0","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Login/Login.vue ***!
-  \************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!../~/vue-style-loader!../~/css-loader?{"url":false}!../~/ns-vue-loader/lib/style-compiler?{"vue":true,"id":"data-v-c27482c4","scoped":false,"hasInlineConfig":false}!../~/sass-loader/lib/loader.js!../~/ns-vue-loader/lib/selector.js?type=styles&index=0&bustCache!./components/Login.vue ***!
+  \******************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
 /***/ (function(module, exports) {
 
 // removed by extract-text-webpack-plugin
@@ -20429,20 +20429,20 @@ exports.SpeechRecognition = SpeechRecognition;
 /* 143 */
 /* exports provided: default */
 /* exports used: default */
-/*!**********************************************!*\
-  !*** ./components/Assignment/Assignment.vue ***!
-  \**********************************************/
+/*!***********************************!*\
+  !*** ./components/Assignment.vue ***!
+  \***********************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignment.vue */ 131);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_f86a44b8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-f86a44b8","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignment.vue */ 154);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignment.vue */ 131);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_00373be8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-00373be8","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignment.vue */ 149);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!css-loader!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-f86a44b8","scoped":false,"hasInlineConfig":false}!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Assignment.vue */ 137)
+  __webpack_require__(/*! !../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":0,"remove":true}!css-loader!../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-00373be8","scoped":false,"hasInlineConfig":false}!../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Assignment.vue */ 137)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20457,13 +20457,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignment_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_f86a44b8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_00373be8_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignment_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Assignment/Assignment.vue"
+Component.options.__file = "components/Assignment.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20473,9 +20473,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-f86a44b8", Component.options)
+    hotAPI.createRecord("data-v-00373be8", Component.options)
   } else {
-    hotAPI.reload("data-v-f86a44b8", Component.options)
+    hotAPI.reload("data-v-00373be8", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20489,16 +20489,16 @@ if (false) {(function () {
 /* 144 */
 /* exports provided: default */
 /* exports used: default */
-/*!************************************************!*\
-  !*** ./components/Assignments/Assignments.vue ***!
-  \************************************************/
+/*!************************************!*\
+  !*** ./components/Assignments.vue ***!
+  \************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignments.vue */ 132);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_381339d2_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-381339d2","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignments.vue */ 151);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Assignments.vue */ 132);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_0a5be23b_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-0a5be23b","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Assignments.vue */ 150);
 var disposed = false
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20513,13 +20513,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Assignments_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_381339d2_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_0a5be23b_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Assignments_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Assignments/Assignments.vue"
+Component.options.__file = "components/Assignments.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20529,9 +20529,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-381339d2", Component.options)
+    hotAPI.createRecord("data-v-0a5be23b", Component.options)
   } else {
-    hotAPI.reload("data-v-381339d2", Component.options)
+    hotAPI.reload("data-v-0a5be23b", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20545,16 +20545,16 @@ if (false) {(function () {
 /* 145 */
 /* exports provided: default */
 /* exports used: default */
-/*!**********************************!*\
-  !*** ./components/Home/Home.vue ***!
-  \**********************************/
+/*!*****************************!*\
+  !*** ./components/Home.vue ***!
+  \*****************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Home.vue */ 133);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_9681c438_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-9681c438","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Home.vue */ 152);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Home.vue */ 133);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_67410f3a_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-67410f3a","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Home.vue */ 153);
 var disposed = false
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20569,13 +20569,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Home_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_9681c438_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_67410f3a_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Home_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Home/Home.vue"
+Component.options.__file = "components/Home.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20585,9 +20585,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-9681c438", Component.options)
+    hotAPI.createRecord("data-v-67410f3a", Component.options)
   } else {
-    hotAPI.reload("data-v-9681c438", Component.options)
+    hotAPI.reload("data-v-67410f3a", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20601,20 +20601,20 @@ if (false) {(function () {
 /* 146 */
 /* exports provided: default */
 /* exports used: default */
-/*!************************************!*\
-  !*** ./components/Login/Login.vue ***!
-  \************************************/
+/*!******************************!*\
+  !*** ./components/Login.vue ***!
+  \******************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Login.vue */ 134);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_dc03ccd0_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-dc03ccd0","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Login.vue */ 153);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./Login.vue */ 134);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_c27482c4_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-c27482c4","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./Login.vue */ 154);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-dc03ccd0","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Login.vue */ 140)
+  __webpack_require__(/*! !../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-c27482c4","scoped":false,"hasInlineConfig":false}!sass-loader!../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./Login.vue */ 140)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20629,13 +20629,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_Login_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_dc03ccd0_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_c27482c4_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_Login_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Login/Login.vue"
+Component.options.__file = "components/Login.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20645,9 +20645,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-dc03ccd0", Component.options)
+    hotAPI.createRecord("data-v-c27482c4", Component.options)
   } else {
-    hotAPI.reload("data-v-dc03ccd0", Component.options)
+    hotAPI.reload("data-v-c27482c4", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20661,20 +20661,20 @@ if (false) {(function () {
 /* 147 */
 /* exports provided: default */
 /* exports used: default */
-/*!*******************************************!*\
-  !*** ./components/Login/LoginInitial.vue ***!
-  \*******************************************/
+/*!*************************************!*\
+  !*** ./components/LoginInitial.vue ***!
+  \*************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginInitial.vue */ 135);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_122328bc_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-122328bc","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginInitial.vue */ 149);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginInitial.vue */ 135);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_0ea21e14_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-0ea21e14","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginInitial.vue */ 151);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-122328bc","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginInitial.vue */ 138)
+  __webpack_require__(/*! !../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-0ea21e14","scoped":false,"hasInlineConfig":false}!sass-loader!../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginInitial.vue */ 138)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20689,13 +20689,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginInitial_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_122328bc_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_0ea21e14_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginInitial_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Login/LoginInitial.vue"
+Component.options.__file = "components/LoginInitial.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20705,9 +20705,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-122328bc", Component.options)
+    hotAPI.createRecord("data-v-0ea21e14", Component.options)
   } else {
-    hotAPI.reload("data-v-122328bc", Component.options)
+    hotAPI.reload("data-v-0ea21e14", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20721,20 +20721,20 @@ if (false) {(function () {
 /* 148 */
 /* exports provided: default */
 /* exports used: default */
-/*!****************************************!*\
-  !*** ./components/Login/LoginMain.vue ***!
-  \****************************************/
+/*!**********************************!*\
+  !*** ./components/LoginMain.vue ***!
+  \**********************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !babel-loader!../../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginMain.vue */ 136);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_15b7021e_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !../../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-15b7021e","hasScoped":false,"buble":{"transforms":{}}}!../../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginMain.vue */ 150);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !babel-loader!../../~/ns-vue-loader/lib/selector?type=script&index=0&bustCache!./LoginMain.vue */ 136);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_5be630f7_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__ = __webpack_require__(/*! !../../~/ns-vue-loader/lib/template-compiler/index?{"id":"data-v-5be630f7","hasScoped":false,"buble":{"transforms":{}}}!../../~/ns-vue-loader/lib/selector?type=template&index=0&bustCache!./LoginMain.vue */ 152);
 var disposed = false
 function injectStyle (ssrContext) {
   if (disposed) return
-  __webpack_require__(/*! !../../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-15b7021e","scoped":false,"hasInlineConfig":false}!sass-loader!../../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginMain.vue */ 139)
+  __webpack_require__(/*! !../../~/extract-text-webpack-plugin/loader.js?{"id":2,"omit":1,"remove":true}!vue-style-loader!css-loader?{"url":false}!../../~/ns-vue-loader/lib/style-compiler/index?{"vue":true,"id":"data-v-5be630f7","scoped":false,"hasInlineConfig":false}!sass-loader!../../~/ns-vue-loader/lib/selector?type=styles&index=0&bustCache!./LoginMain.vue */ 139)
 }
-var normalizeComponent = __webpack_require__(/*! ../../../~/ns-vue-loader/lib/component-normalizer */ 13)
+var normalizeComponent = __webpack_require__(/*! ../../~/ns-vue-loader/lib/component-normalizer */ 13)
 /* script */
 
 /* template */
@@ -20749,13 +20749,13 @@ var __vue_scopeId__ = null
 var __vue_module_identifier__ = null
 var Component = normalizeComponent(
   __WEBPACK_IMPORTED_MODULE_0__babel_loader_node_modules_ns_vue_loader_lib_selector_type_script_index_0_bustCache_LoginMain_vue__["a" /* default */],
-  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_15b7021e_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__["a" /* default */],
+  __WEBPACK_IMPORTED_MODULE_1__node_modules_ns_vue_loader_lib_template_compiler_index_id_data_v_5be630f7_hasScoped_false_buble_transforms_node_modules_ns_vue_loader_lib_selector_type_template_index_0_bustCache_LoginMain_vue__["a" /* default */],
   __vue_template_functional__,
   __vue_styles__,
   __vue_scopeId__,
   __vue_module_identifier__
 )
-Component.options.__file = "components/Login/LoginMain.vue"
+Component.options.__file = "components/LoginMain.vue"
 if (Component.esModule && Object.keys(Component.esModule).some(function (key) {  return key !== "default" && key.substr(0, 2) !== "__"})) {  console.error("named exports are not supported in *.vue files.")}
 
 /* hot reload */
@@ -20765,9 +20765,9 @@ if (false) {(function () {
   if (!hotAPI.compatible) return
   module.hot.accept()
   if (!module.hot.data) {
-    hotAPI.createRecord("data-v-15b7021e", Component.options)
+    hotAPI.createRecord("data-v-5be630f7", Component.options)
   } else {
-    hotAPI.reload("data-v-15b7021e", Component.options)
+    hotAPI.reload("data-v-5be630f7", Component.options)
 ' + '  }
   module.hot.dispose(function (data) {
     disposed = true
@@ -20781,35 +20781,22 @@ if (false) {(function () {
 /* 149 */
 /* exports provided: default */
 /* exports used: default */
-/*!****************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-122328bc","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Login/LoginInitial.vue ***!
-  \****************************************************************************************************************************************************************************************************************************/
+/*!********************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-00373be8","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Assignment.vue ***!
+  \********************************************************************************************************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-var esExports = { template: '  \n  <StackLayout ref=\"initialContainer\" class=\"initial-container\" :visibility=\"visible?\'visible\':\'collapse\'\">\n    <Label text=\"Elocute\" class=\"initial-label\"></Label>\n    <StackLayout @tap=\"welcome()\" class=\"initial-button\">\n      <Label text=\"Welcome\" class=\"initial-button-label\"></Label>\n    </StackLayout>\n  </StackLayout>\n  ' }
+var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  \n                  <GridLayout columns=\"*,*\" rows=\"auto\">\n                      <Button col=\"0\" row=\"0\" class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>                \n                      <Button col=\"1\" row=\"0\" class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  </GridLayout>\n                  \n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn stop\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
 /* 150 */
 /* exports provided: default */
 /* exports used: default */
-/*!*************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-15b7021e","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Login/LoginMain.vue ***!
-  \*************************************************************************************************************************************************************************************************************************/
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-var esExports = { template: '  \n  <StackLayout ref=\"mainContainer\" class=\"main-container\" :visibility=\"visible?\'visible\':\'collapse\'\">\n    <Label class=\"main-label\" text=\"Elocute\" :color=\"isLoggingIn? \'black\' : \'white\'\"></Label>\n  \n    <GridLayout ref=\"formControls\" class=\"form-controls\" rows=\"auto, auto\" translateY=\"50\">\n      <TextField\n        hint=\"Email Address\"\n        keyboardType=\"email\"\n        returnKeyType=\"next\"\n        @returnPress=\"focusPassword()\"\n        v-model=\"user.email\"\n        :iEnabled=\"!isAuthenticating\"\n        autocorrect=\"false\"\n        autocapitalizationType=\"none\"\n        :class=\"{ light: !isLoggingIn}\"\n        row=\"0\"></TextField>\n      <TextField ref=\"password\"\n        hint=\"Password\"\n        secure=\"true\"\n        returnKeyType=\"done\"\n        @returnPress=\"submit()\"\n        v-model=\"user.password\"\n        :isEnabled=\"!isAuthenticating\"\n        :class=\"{ light: !isLoggingIn }\"\n        row=\"1\"></TextField>\n  \n      <ActivityIndicator :busy=\"isAuthenticating\" rowSpan=\"2\"></ActivityIndicator>\n    </GridLayout>\n  \n    <Button\n      :text=\"isLoggingIn ? \'Login\' : \'Sign up\'\"\n      :isEnabled=\"!isAuthenticating\"\n      class=\"submit-button\"\n      @tap=\"submit()\"></Button>\n  \n    <Label\n      class=\"forgot-password-label\"\n      text=\"Forgot password?\"\n      @tap=\"forgotPassword()\"\n      :opacity=\"isLoggingIn ? 1 : 0\"></Label>\n  \n    <StackLayout ref=\"signUpStack\" class=\"sign-up-stack\" @tap=\"toggleDisplay()\" translateY=\"50\">\n      <Label :text=\"isLoggingIn ? \'Sign up here\' : \'Back to login\'\"></Label>\n    </StackLayout>\n  </StackLayout>\n  ' }
-/* harmony default export */ __webpack_exports__["a"] = (esExports);
-
-/***/ }),
-/* 151 */
-/* exports provided: default */
-/* exports used: default */
-/*!*********************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-381339d2","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Assignments/Assignments.vue ***!
-  \*********************************************************************************************************************************************************************************************************************************/
+/*!*********************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-0a5be23b","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Assignments.vue ***!
+  \*********************************************************************************************************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -20817,12 +20804,38 @@ var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" b
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
+/* 151 */
+/* exports provided: default */
+/* exports used: default */
+/*!**********************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-0ea21e14","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/LoginInitial.vue ***!
+  \**********************************************************************************************************************************************************************************************************************/
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var esExports = { template: '  \n  <StackLayout ref=\"initialContainer\" class=\"initial-container\" :visibility=\"visible?\'visible\':\'collapse\'\">\n    <Label text=\"Elocute\" class=\"initial-label\"></Label>\n    <StackLayout @tap=\"welcome()\" class=\"initial-button\">\n      <Label text=\"Welcome\" class=\"initial-button-label\"></Label>\n    </StackLayout>\n  </StackLayout>\n  ' }
+/* harmony default export */ __webpack_exports__["a"] = (esExports);
+
+/***/ }),
 /* 152 */
 /* exports provided: default */
 /* exports used: default */
 /*!*******************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-9681c438","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Home/Home.vue ***!
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-5be630f7","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/LoginMain.vue ***!
   \*******************************************************************************************************************************************************************************************************************/
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+var esExports = { template: '  \n  <StackLayout ref=\"mainContainer\" class=\"main-container\" :visibility=\"visible?\'visible\':\'collapse\'\">\n    <Label class=\"main-label\" text=\"Elocute\" :color=\"isLoggingIn? \'black\' : \'white\'\"></Label>\n  \n    <GridLayout ref=\"formControls\" class=\"form-controls\" rows=\"auto, auto\" translateY=\"50\">\n      <TextField\n        hint=\"Email Address\"\n        keyboardType=\"email\"\n        returnKeyType=\"next\"\n        @returnPress=\"focusPassword()\"\n        v-model=\"user.email\"\n        :iEnabled=\"!isAuthenticating\"\n        autocorrect=\"false\"\n        autocapitalizationType=\"none\"\n        :class=\"{ light: !isLoggingIn}\"\n        row=\"0\"></TextField>\n      <TextField ref=\"password\"\n        hint=\"Password\"\n        secure=\"true\"\n        returnKeyType=\"done\"\n        @returnPress=\"submit()\"\n        v-model=\"user.password\"\n        :isEnabled=\"!isAuthenticating\"\n        :class=\"{ light: !isLoggingIn }\"\n        row=\"1\"></TextField>\n  \n      <ActivityIndicator :busy=\"isAuthenticating\" rowSpan=\"2\"></ActivityIndicator>\n    </GridLayout>\n  \n    <Button\n      :text=\"isLoggingIn ? \'Login\' : \'Sign up\'\"\n      :isEnabled=\"!isAuthenticating\"\n      class=\"submit-button\"\n      @tap=\"submit()\"></Button>\n  \n    <Label\n      class=\"forgot-password-label\"\n      text=\"Forgot password?\"\n      @tap=\"forgotPassword()\"\n      :opacity=\"isLoggingIn ? 1 : 0\"></Label>\n  \n    <StackLayout ref=\"signUpStack\" class=\"sign-up-stack\" @tap=\"toggleDisplay()\" translateY=\"50\">\n      <Label :text=\"isLoggingIn ? \'Sign up here\' : \'Back to login\'\"></Label>\n    </StackLayout>\n  </StackLayout>\n  ' }
+/* harmony default export */ __webpack_exports__["a"] = (esExports);
+
+/***/ }),
+/* 153 */
+/* exports provided: default */
+/* exports used: default */
+/*!**************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-67410f3a","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Home.vue ***!
+  \**************************************************************************************************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -20830,29 +20843,16 @@ var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" b
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),
-/* 153 */
+/* 154 */
 /* exports provided: default */
 /* exports used: default */
-/*!*********************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-dc03ccd0","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Login/Login.vue ***!
-  \*********************************************************************************************************************************************************************************************************************/
+/*!***************************************************************************************************************************************************************************************************************!*\
+  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-c27482c4","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Login.vue ***!
+  \***************************************************************************************************************************************************************************************************************/
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 var esExports = { template: '  \n  <Page ref=\"page\" :class=\"pageClasses\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <GridLayout class=\'login\'>\n      \n      <LoginInitial ref=\"loginInitial\" @login=\"showMainContent()\" :visible=\"state === \'initial\'\"></LoginInitial>\n      <LoginMain ref=\"loginMain\" :visible=\"state === \'main\'\"></LoginMain>\n  \n      <AbsoluteLayout marginTop=\"-340\" ref=\"logoContainer\" class=\"logo-container\">\n        <Image translateY=\"0\" src=\"res://seal\" stretch=\"none\"/>\n      </AbsoluteLayout>\n  \n    </GridLayout>\n  </Page>\n  ' }
-/* harmony default export */ __webpack_exports__["a"] = (esExports);
-
-/***/ }),
-/* 154 */
-/* exports provided: default */
-/* exports used: default */
-/*!*******************************************************************************************************************************************************************************************************************************!*\
-  !*** ../~/ns-vue-loader/lib/template-compiler?{"id":"data-v-f86a44b8","hasScoped":false,"buble":{"transforms":{}}}!../~/ns-vue-loader/lib/selector.js?type=template&index=0&bustCache!./components/Assignment/Assignment.vue ***!
-  \*******************************************************************************************************************************************************************************************************************************/
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-var esExports = { template: '  \n  <Page ref=\"page\" actionBarHidden=\"true\" backgroundSpanUnderStatusBar=\"true\">\n    <StackLayout>\n      <GridLayout class=\"action-bar\" rows=\"*\" columns=\"20,2*,20\">\n        <Image src=\"~/images/back.png\" col=\"0\" row=\"0\" class=\"header-icon\" @tap=\"goBack()\"/>\n        <Label col=\"1\" row=\"0\" class=\"header\" :text=\"assignment.Title\"></Label>\n        <Image src=\"~/images/logout.png\" class=\"header-icon\" col=\"2\" row=\"0\" @tap=\"logout()\"/>\n      </GridLayout>\n      <StackLayout class=\"container\">\n          <Image src=\"~/images/header.png\"/>        \n              <StackLayout class=\"card\" height=\"100%\">\n                  <Label class=\"instruction\" textWrap=\"true\" text=\"Press the \'start\' button, then read this text aloud, slowly and clearly\"></Label>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span :text=\"assignment.Text\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  \n                  <GridLayout columns=\"*,*\" rows=\"auto\">\n                      <Button col=\"0\" row=\"0\" class=\"btn start\" @tap=\"startListening()\" text=\"Start\"></Button>                \n                      <Button col=\"1\" row=\"0\" class=\"btn stop\" @tap=\"stopListening()\" text=\"Stop\"></Button>\n                  </GridLayout>\n                  \n                  <ActivityIndicator :busy=\"isSpeaking\" rowSpan=\"2\"></ActivityIndicator>\n                  <ScrollView height=\"20%\" class=\"transcription\">\n                      <Label verticalAlignment=\"top\" horizontalAlignment=\"left\" textWrap=\"true\">\n                          <FormattedString>\n                              <Span ref=\"transcriptionLbl\"></Span>\n                          </FormattedString>\n                      </Label>\n                  </ScrollView>\n                  <Button class=\"btn score\" @tap=\"getScore()\" text=\"Get my Score\"></Button>\n              </StackLayout>\n      </StackLayout>\n  </StackLayout>\n  </Page>\n  ' }
 /* harmony default export */ __webpack_exports__["a"] = (esExports);
 
 /***/ }),

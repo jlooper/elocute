@@ -37,33 +37,25 @@ let router = new Router({
       path: '/home',
       name: 'home',
       component: TeacherHome,
-      meta: {
-        requiresAuth: true,
-      },
+      meta: { requiresAuth: true },
     },
     {
       path: '/classroomhome/:id',
       name: 'ClassroomHome',
       component: ClassroomHome,
-      meta: {
-        requiresAuth: true,
-      },
+      meta: { requiresAuth: true },
     },
     {
       path: '/assignmenthome/:classId/:id',
       name: 'AssignmentHome',
       component: AssignmentHome,
-      meta: {
-        requiresAuth: true,
-      },
+      meta: { requiresAuth: true },
     },
     {
       path: '/studenthome/:id',
       name: 'StudentHome',
       component: StudentHome,
-      meta: {
-        requiresAuth: true,
-      },
+      meta: { requiresAuth: true },
     },
   ],
 });
@@ -71,8 +63,6 @@ router.beforeEach((to, from, next) => {
   let requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
   if (requiresAuth && !store.state.user) next('auth');
-  else
-    //else if (!requiresAuth && currentUser) next('home');
-    next();
+  else next();
 });
 export default router;

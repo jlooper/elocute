@@ -50,9 +50,9 @@ import { Animation } from 'ui/animation'
 import { prompt } from "ui/dialogs"
 import { Color } from 'tns-core-modules/color'
 import { connectionType, getConnectionType } from 'tns-core-modules/connectivity'
-import User from '../../models/User'
-import FirebaseService from '../../services/FirebaseService'
-import alert from '../../utils/alert'
+import User from '../models/User'
+import FirebaseService from '../services/FirebaseService'
+import alert from '../utils/alert'
 const firebaseService = new FirebaseService()
 
 export default {

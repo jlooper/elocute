@@ -194,9 +194,6 @@ TextField {
 .stop {
     background-color: #90D2C5;
 }
-.score {
-    background-color: #F3F3F3;
-}
 .transcription {
     font-family: "Quicksand";
     margin: 5;

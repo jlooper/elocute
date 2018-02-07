@@ -20,7 +20,7 @@
 </Page>
 </template>
 <script>
-import FirebaseService from '../../services/FirebaseService'
+import FirebaseService from '../services/FirebaseService'
 const firebaseService = new FirebaseService()
 import Router from 'vue-router';
 import { mapState, mapGetters } from 'vuex';
