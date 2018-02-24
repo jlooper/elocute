@@ -2,15 +2,17 @@ Elocute is a mobile app for students that helps language teachers move from an o
 
 Learn more about NativeScript-Vue at [NativeScript-Vue.org](http://www.nativescript-vue.org).
 
+The mobile app is run from the mobile folder. 
+
 Running the mobile app: in two separate terminals run:
 
 ```
 # terminal 1
-cd elocute
+cd elocute/mobile
 webpack --watch --env.tns --env.ios (or env.android)
 
 # terminal 2
-cd elocute/tns
+cd elocute/mobile/tns
 tns debug android
 # or
 tns debug ios
