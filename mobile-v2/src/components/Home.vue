@@ -3,10 +3,12 @@
     <StackLayout>
         <GridLayout class="action-bar" rows="*" columns="3*,auto">
             <Label col="0" row="0" class="header" text="Welcome to Elocute!"></Label>
-        <Label col="1" row="0" class="fa" horizontalAlignment="right" @tap="logout()" :text="'fa-sign-out' | fonticon" />
+            <Label col="1" row="0" class="fa" horizontalAlignment="right" @tap="logout()" :text="'fa-sign-out' | fonticon" />
         </GridLayout>
+        
+        <Image src="~/images/header"/>
+            
         <StackLayout class="container">
-            <Image src="~/images/header"/>
             <ScrollView style="height: 100%">
                 <StackLayout>
                     <StackLayout class="card" v-for="item in classrooms" v-bind:key="item.id" @tap="getAssignments(item.id)">
@@ -21,15 +23,13 @@
 <script>
 
 import { mapState, mapActions } from 'vuex';
+import Assignments from './Assignments'
 
 export default {
   name: 'home',
   computed: {
         ...mapState(['classrooms'])
   },
-  data: () => ({
-	item: {}
-    }),
   created () {
       this.init();
   },  
@@ -39,8 +39,7 @@ export default {
         this.fetchClassrooms();
     },
     getAssignments(id) {
-        console.log(id)
-        this.$changeRoute(this.$routes.assignments, { context: { propsData: { id: id } } })
+        this.$navigateTo(Assignments, { context: { propsData: { id: id } } })
     },
     logout() {
         this.$firebaseService.logout()

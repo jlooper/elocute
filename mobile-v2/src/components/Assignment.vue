@@ -2,13 +2,16 @@
 <Page ref="page" actionBarHidden="true" backgroundSpanUnderStatusBar="true">
   <StackLayout>
     <GridLayout class="action-bar" rows="*" columns="20,2*,20">
-      <Image src="~/images/back.png" col="0" row="0" class="header-icon" @tap="goBack()"/>
-      <Label col="1" row="0" class="header" :text="assignment.Title"></Label>
-      <Image src="~/images/logout.png" class="header-icon" col="2" row="0" @tap="logout()"/>
-    </GridLayout>
-    <StackLayout class="container">
-        <Image src="~/images/header.png"/>        
-            <StackLayout class="card" height="100%">
+      <Label col="0" row="0" class="fa" @tap="goBack()" :text="'fa-chevron-left' | fonticon" />
+      <Label col="1" row="0" class="header" text="My Assignments"></Label>
+      <Label col="2" row="0" class="fa" @tap="logout()" :text="'fa-sign-out' | fonticon" />
+    </GridLayout> 
+    
+    <Image src="~/images/header"/>
+        
+    <StackLayout class="container" height="100%">
+               
+            <StackLayout class="card">
                 <Label class="instruction" textWrap="true" text="Press the 'start' button, then read this text aloud, slowly and clearly"></Label>
                 <ScrollView height="20%" class="transcription">
                     <Label verticalAlignment="top" horizontalAlignment="left" textWrap="true">
@@ -53,9 +56,9 @@ export default {
       ...mapGetters(['assignment'])
     },
     watch: {
-      '$route.params.id': {
+      'this.id': {
         handler(id) {
-          this.$store.commit('setActiveAssignment', this.$route.params.id)
+          this.$store.commit('setActiveAssignment', this.id)
         },
         immediate: true
       }
@@ -165,9 +168,11 @@ export default {
 }
 .start {
     background-color: #66A59A;
+    margin: 5;
 }
 .stop {
     background-color: #90D2C5;
+    margin: 5
 }
 .transcription {
     font-family: "Quicksand";

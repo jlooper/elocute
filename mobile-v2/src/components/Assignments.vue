@@ -2,13 +2,15 @@
 <Page ref="page" actionBarHidden="true" backgroundSpanUnderStatusBar="true">
   <StackLayout>
     <GridLayout class="action-bar" rows="*" columns="20,2*,20">
-      <Label col="0" row="0" class="fa" @tap="goBack()" :text="'fa-arrow-left' | fonticon" />
+      <Label col="0" row="0" class="fa" @tap="goBack()" :text="'fa-chevron-left' | fonticon" />
       <Label col="1" row="0" class="header" text="My Assignments"></Label>
       <Label col="2" row="0" class="fa" @tap="logout()" :text="'fa-sign-out' | fonticon" />
-    </GridLayout>
-    
+    </GridLayout>    
+
+    <Image src="~/images/header"/> 
+
     <StackLayout class="container">
-        <Image src="~/images/header"/>        
+              
         <ScrollView style="height: 100%">
             <StackLayout>
                 <StackLayout class="card" v-for="item in assignments" v-bind:key="item.id" @tap="getAssignment(item.id)">
@@ -22,6 +24,7 @@
 </template>
 <script>
 import { mapState, mapGetters } from 'vuex';
+import Assignment from './Assignment'
 
 export default {
   name: 'assignments',
@@ -30,18 +33,15 @@ export default {
 		...mapState(['classrooms', 'activeClassroom', 'assignments']),
 		...mapGetters(['classroom', 'assignment']),
 	},
-  data: () => ({
-	item: {}
-    }),
   created () {
       this.init();
   },
   methods: {
     init() {
-      this.$store.dispatch('fetchAssignments', this.$route.params.id);
+      this.$store.dispatch('fetchAssignments', this.id);
     },
     getAssignment(id) {
-        this.$changeRoute(this.$routes.assignment, { context: { propsData: { id: id } } })
+        this.$navigateTo(Assignment, { context: { propsData: { id: id } } })
     },
     logout() {
         this.$firebaseService.logout()
