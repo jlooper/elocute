@@ -1,23 +1,22 @@
 <template>
-<Page ref="page" actionBarHidden="true" backgroundSpanUnderStatusBar="true">
-  <StackLayout>
-    <GridLayout class="action-bar" rows="*" columns="3*,20">
-      <Label col="0" row="0" class="header" text="Welcome to Elocute!"></Label>
-      <Image src="~/images/logout.png" class="header-icon" col="1" row="0" @tap="logout()"/>
-    </GridLayout>
-    <StackLayout class="container">
-        <Image src="~/images/header"/>        
-        <ScrollView style="height: 100%">
-            <StackLayout>
-                <StackLayout class="card" v-for="item in classrooms" v-bind:key="item.id" @tap="getAssignments(item.id)">
-                    <Label :text="item.ClassName"></Label>
-                </StackLayout>                
-            </StackLayout>
-        </ScrollView>
+    <Page ref="page" actionBarHidden="true" backgroundSpanUnderStatusBar="true">
+    <StackLayout>
+        <GridLayout class="action-bar" rows="*" columns="3*,auto">
+            <Label col="0" row="0" class="header" text="Welcome to Elocute!"></Label>
+        <Label col="1" row="0" class="fa" horizontalAlignment="right" @tap="logout()" :text="'fa-sign-out' | fonticon" />
+        </GridLayout>
+        <StackLayout class="container">
+            <Image src="~/images/header"/>
+            <ScrollView style="height: 100%">
+                <StackLayout>
+                    <StackLayout class="card" v-for="item in classrooms" v-bind:key="item.id" @tap="getAssignments(item.id)">
+                        <Label :text="item.ClassName"></Label>
+                    </StackLayout>                
+                </StackLayout>
+            </ScrollView>
+        </StackLayout>
     </StackLayout>
-
-</StackLayout>
-</Page>
+    </Page>
 </template>
 <script>
 
@@ -33,19 +32,19 @@ export default {
     }),
   created () {
       this.init();
-  },
-  
+  },  
   methods: {
       ...mapActions(['fetchClassrooms']),
     init() {
         this.fetchClassrooms();
     },
     getAssignments(id) {
-        this.$router.replace('/assignments/'+id)
+        console.log(id)
+        this.$changeRoute(this.$routes.assignments, { context: { propsData: { id: id } } })
     },
     logout() {
         this.$firebaseService.logout()
-        this.$router.replace('/login')
+        this.$changeRoute(this.$routes.login)
     }
   }
   

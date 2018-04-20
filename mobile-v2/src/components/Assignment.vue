@@ -43,6 +43,7 @@ import { SpeechRecognition, SpeechRecognitionTranscription, SpeechRecognitionOpt
 
 export default {
   name: 'assignment',
+  props: ['id'],
   data: () => ({
     isSpeaking: false,
     speechRecognition: new SpeechRecognition()
@@ -121,7 +122,7 @@ export default {
       },
       logout() {
         this.$firebaseService.logout()
-        this.$router.push('/login')
+        this.$changeRoute(this.$routes.login)
       },
         goBack() {
             this.$navigateBack()

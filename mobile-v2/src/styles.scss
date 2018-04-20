@@ -7,7 +7,9 @@ Page {
     margin: 0;
     padding: 0;
 }
-
+.fa {
+    font-family: FontAwesome, fontawesome-webfont;   
+}
 .container {
     background-color: #F3F3F3;
     margin: 0;
@@ -30,10 +32,9 @@ Label {
     font-size: 20;
     font-family: "Quicksand";
     height: 30;
-    padding-top: 10;
 }
 .header {
-    vertical-align: center; 
+    vertical-align: top; 
     text-align: center;
 }
 .header-icon {

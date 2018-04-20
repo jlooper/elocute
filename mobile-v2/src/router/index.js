@@ -1,4 +1,4 @@
-import Vue from 'nativescript-vue';
+/*import Vue from 'nativescript-vue';
 import VueRouter from 'vue-router';
 
 Vue.use(VueRouter);
@@ -40,3 +40,18 @@ const router = new VueRouter({
 router.replace('/home');
 
 module.exports = router;
+*/
+
+import Home from '../components/Home'
+import Login from '../components/Login'
+import Assignments from '../components/Assignments'
+import Assignment from '../components/Assignment'
+
+const routes = {
+  home: Home,
+  login: Login,
+  assignments: Assignments,
+  assignment: Assignment
+}
+
+module.export = routes;

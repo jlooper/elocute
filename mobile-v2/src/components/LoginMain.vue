@@ -100,7 +100,7 @@ export default {
       }
     },
     navigate() {
-      this.$router.push('/home')
+      this.$changeRoute(this.$routes.home)
     },
     login() {
       if (getConnectionType() === connectionType.none) {
@@ -111,7 +111,7 @@ export default {
         .login(this.user)
         .then(() => {
           this.isAuthenticating = false;
-          this.$router.push('/home')
+          this.$changeRoute(this.$routes.home)
         })
         .catch((error) => {
           console.error(error)
