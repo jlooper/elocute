@@ -1,0 +1,44 @@
+@import '~/nativescript-theme-core/css/core.light.css';
+
+Page {
+  background-color: #8FD2C6;
+  font-family: "Quicksand";
+  font-size: 20;
+  margin: 0;
+  padding: 0;
+}
+.fa {
+  font-family: FontAwesome, fontawesome-webfont;
+}
+.container {
+  background-color: #F3F3F3;
+}
+.card {
+  font-family: "Quicksand";
+  background-color: #F5D1E9;
+  border-radius: 3;
+  margin: 10;
+  padding: 20;
+}
+Label {
+  color: #131426;
+}
+.action-bar {
+  background-color: #90D2C5;
+  color: #131426;
+  font-weight: bold;
+  font-size: 20;
+  font-family: "Quicksand";
+  height: 30;
+}
+.header {
+  vertical-align: top;
+  text-align: center;
+}
+.header-icon {
+  padding: 3
+}
+TextField {
+  padding: 10;
+  font-size: 13;
+}
