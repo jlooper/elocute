@@ -23,6 +23,7 @@ export default {
                   ClassName: obj[key].ClassName
                 }));
                 console.log(classrooms)
+                //this is broken
                 storeConf.mutations.setClassrooms(classrooms)
                 
               }
