@@ -1,5 +1,5 @@
 import firebase from 'nativescript-plugin-firebase'
-import {store} from '../main';
+import store from '../store';
 
 export default {
   getCurrentUser() {

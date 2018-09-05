@@ -133,4 +133,4 @@ const storeConf = {
   actions
 }
 
-export default storeConf
+export default new Vuex.Store(storeConf)

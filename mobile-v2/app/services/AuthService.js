@@ -1,6 +1,7 @@
 // import * as http from 'tns-core-modules/http'
 import BackendService from './BackendService'
 import firebase from 'nativescript-plugin-firebase'
+import {backendService} from "../main";
 
 export default class AuthService extends BackendService {
 
@@ -18,7 +19,7 @@ export default class AuthService extends BackendService {
         password: user.password
       }
     })
-    BackendService.token = result.uid;
+    backendService.token = result.uid;
     return JSON.stringify(result);
   }
 
@@ -38,7 +39,7 @@ export default class AuthService extends BackendService {
   }
 
   async logout() {
-    BackendService.token = "";
+    backendService.token = "";
     return firebase.logout();
   }
 

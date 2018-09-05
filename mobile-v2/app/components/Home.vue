@@ -42,7 +42,7 @@
       },
       logout() {
         this.$authService.logout()
-        this.$changeRoute('login')
+        this.$changeRoute('login', { clearHistory: true })
       }
     }
 

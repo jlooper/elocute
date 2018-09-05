@@ -125,7 +125,7 @@ export default {
       },
       logout() {
         this.$authService.logout()
-        this.$changeRoute(this.$routes.login)
+        this.$changeRoute('login', { clearHistory: true })
       },
         goBack() {
             this.$navigateBack()
