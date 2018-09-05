@@ -4,20 +4,20 @@ import storeConf from './store';
 import Vuex from 'vuex';
 import firebase from 'nativescript-plugin-firebase'
 import BackendService from './services/BackendService'
-import FirebaseService from './services/FirebaseService'
-import {TNSFontIcon, fonticon} from 'nativescript-fonticon';
+import AuthService from './services/AuthService'
+import { TNSFontIcon, fonticon } from 'nativescript-fonticon'
 
 import Home from './components/Home'
 import Login from './components/Login'
 
 //import { setStatusBarColors } from './utils/statusBar'
 const backendService = new BackendService()
-const firebaseService = new FirebaseService()
-const store = new Vuex.Store(storeConf);
+const authService = new AuthService()
+const store = new Vuex.Store(storeConf)
 
 Vue.prototype.$store = store;
 Vue.prototype.$routes = routes;
-Vue.prototype.$firebaseService = firebaseService;
+Vue.prototype.$authService = authService
 //route manually
 Vue.prototype.$changeRoute = (to) => {
   Vue.navigateTo(routes[to])
@@ -29,15 +29,17 @@ TNSFontIcon.paths = {
 };
 TNSFontIcon.loadCss();
 
-Vue.filter('fonticon', fonticon);
+Vue.filter('fonticon', fonticon)
 
 Vue.use(Vuex)
+
 
 firebase.init({
   onAuthStateChanged: data => { // optional
     console.log((data.loggedIn ? "Logged in to firebase" : "Logged out from firebase") + " (init's onAuthStateChanged callback)");
     if (data.loggedIn) {
       backendService.token = data.user.uid
+      console.log(data.user.uid)
       store.commit('setUser', data.user)
       Vue.navigateTo(Home)
     }
@@ -45,11 +47,15 @@ firebase.init({
       backendService.token = ""
       Vue.navigateTo(Login)
     }
+  }
+}).then(
+  instance => {
+    console.log("firebase.init done");
   },
-  persist: false,
-}).then(() => 
-  (error) => console.log(`firebase.init error: ${error}`));
- 
+  error => {
+    console.log(`firebase.init error: ${error}`);
+  }
+);
 
 import './styles.scss';
 

@@ -1,5 +1,5 @@
 <template>
-  <StackLayout ref="initialContainer" class="initial-container" :visibility="visible?'visible':'collapse'">
+  <StackLayout ref="initialContainer" class="initial-container" v-bind:visibility="visible?'visible':'collapse'">
     <Label text="Elocute" class="initial-label"></Label>
     <StackLayout @tap="welcome()" class="initial-button">
       <Label text="Welcome" class="initial-button-label"></Label>

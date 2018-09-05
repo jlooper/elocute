@@ -107,7 +107,7 @@ export default {
         alert("Elocute requires an internet connection to log in.")
         return;
       }
-      return this.$firebaseService
+      return this.$authService
         .login(this.user)
         .then(() => {
           this.isAuthenticating = false;
@@ -124,7 +124,7 @@ export default {
         alert("Elocute requires an internet connection to register.")
         return;
       }
-      this.$firebaseService
+      this.$authService
         .register(this.user)
         .then(() => {
           alert("Your account was successfully created.")
@@ -147,7 +147,7 @@ export default {
       }).then((data) => {
         if (data.result) {
           this.isAuthenticating = true
-          this.$firebaseService
+          this.$authService
             .resetPassword(data.text.trim())
             .then(() => {
               this.isAuthenticating = false

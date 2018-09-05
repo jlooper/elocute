@@ -42,7 +42,7 @@ export default {
         this.$navigateTo(Assignments, { context: { propsData: { id: id } } })
     },
     logout() {
-        this.$firebaseService.logout()
+        this.$authService.logout()
         this.$changeRoute(this.$routes.login)
     }
   }

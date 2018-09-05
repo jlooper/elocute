@@ -124,7 +124,7 @@ export default {
         return costs[s2.length];
       },
       logout() {
-        this.$firebaseService.logout()
+        this.$authService.logout()
         this.$changeRoute(this.$routes.login)
       },
         goBack() {

@@ -3,6 +3,6 @@
     "v8Flags": "--expose_gc"
   },
   "main": "app.js",
-  "name": "elocute2",
+  "name": "elocute",
   "version": "2.0.0"
 }

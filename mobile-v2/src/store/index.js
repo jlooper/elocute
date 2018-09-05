@@ -1,6 +1,7 @@
 import Vue from 'nativescript-vue';
 import Vuex from 'vuex';
 import firebase from 'nativescript-plugin-firebase'
+import ClassroomService from '../services/ClassroomService'
 
 Vue.use(Vuex);
 
@@ -57,37 +58,11 @@ Vue.use(Vuex);
   }
 
   const actions = {
-    fetchClassrooms: ({ state, commit }) => {
-      firebase.getCurrentUser().then(        
-        function (user) {          
-          var path = "/Users/"+user.uid+"/Classes";
-          var onValueEvent = function (result) {
-            if (result.error) {
-              console.log(result.error)
-            } else {
-              console.log(JSON.stringify(result.value));
-              console.table(result.value)
-              const obj = result.value;
-              const classrooms = Object.keys(obj || {}).map(key => ({
-                id: key,
-                ClassName: obj[key].ClassName
-              }));
-              commit('setClassrooms', classrooms);
-            }
-          };
-
-          firebase.addValueEventListener(onValueEvent, path).then(
-            function (result) {
-              that._listenerWrapper = result;
-              console.log("firebase.addValueEventListener added");
-            },
-            function (error) {
-              console.log("firebase.addValueEventListener error: " + error);
-            }
-        );
-      }
-    )
+    
+    fetchClassrooms() {   
+        ClassroomService.getCurrentUser()
     },
+    
     fetchAssignments ({ commit }, id) { 
       
       var onQueryEvent = function(result) {

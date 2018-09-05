@@ -42,18 +42,20 @@ export default class FirebaseService extends BackendService{
   resetPassword(email) {
     return firebase.resetPassword({
       email: email
-      }).then((result) => {
-            alert(JSON.stringify(result));
-          },
-          function (errorMessage) {
-            alert(errorMessage);
-          }
-      ).catch(this.handleErrors);
+      }).then(
+        function (result) {
+        return JSON.stringify(result);
+        },
+        function (errorMessage) {
+          alert(errorMessage);
+        }
+      )
   }
 
   logout() {
     BackendService.token = "";
     firebase.logout();
-  }  
+  } 
+  
 
 }

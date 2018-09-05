@@ -96,7 +96,27 @@ const config = (platform, launchArgs) => {
       ],
     },
 
-    externals: NativeScriptVueExternals,
+    externals: (context, request, callback) => {
+
+            if (context.indexOf('tns-core-modules') !== -1 ||
+                context.indexOf('nativescript-') !== -1 ||
+                /^(tns-core-modules)/i.test(request) ||
+                /^(ui|application)/i.test(request)) {
+
+                // Support plugins requiring sibling files by rewriting './' into 'context/'
+                if (request.indexOf('./') === 0) {
+                    request = path.join(path.basename(context), request.substring(2));
+                }
+
+                request = request.replace(/\\/g, '/');
+
+                return callback(null, 'commonjs ' + request);
+            }
+
+            request = request.replace(/\\/g, '/');
+
+            callback();
+        },
 
     plugins: [
 
