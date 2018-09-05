@@ -1,24 +1,19 @@
 <template>
     <Page ref="page" actionBarHidden="true" backgroundSpanUnderStatusBar="true">
-        <StackLayout>
-            <GridLayout class="action-bar" rows="*" columns="3*,auto">
-                <Label col="0" row="0" class="header" text="Welcome to Elocute!"></Label>
-                <Label col="1" row="0" class="fa" horizontalAlignment="right" @tap="logout()"
-                       :text="'fa-sign-out' | fonticon"/>
-            </GridLayout>
-
+        <StackLayout class="container">
+            <EloActionBar text="Welcome to Elocute!" :back="false"/>
             <Image src="~/assets/images/header.png"/>
 
-            <StackLayout class="container">
-                <ScrollView style="height: 100%">
-                    <StackLayout>
-                        <StackLayout class="card" v-for="item in classrooms" v-bind:key="item.id"
-                                     @tap="getAssignments(item.id)">
-                            <Label :text="item.ClassName"></Label>
-                        </StackLayout>
+            <ScrollView style="height: 100%">
+                <StackLayout>
+                    <StackLayout class="card"
+                                 v-for="item in classrooms"
+                                 :key="item.id"
+                                 @tap="getAssignments(item.id)">
+                        <Label :text="item.ClassName"></Label>
                     </StackLayout>
-                </ScrollView>
-            </StackLayout>
+                </StackLayout>
+            </ScrollView>
         </StackLayout>
     </Page>
 </template>
@@ -26,9 +21,11 @@
 
   import {mapState, mapActions} from 'vuex';
   import Assignments from './Assignments'
+  import EloActionBar from "./EloActionBar";
 
   export default {
     name: 'home',
+    components: {EloActionBar},
     computed: {
       ...mapState(['classrooms'])
     },
@@ -40,10 +37,6 @@
       getAssignments(id) {
         this.$navigateTo(Assignments, {context: {propsData: {id: id}}})
       },
-      logout() {
-        this.$authService.logout()
-        this.$changeRoute('login', { clearHistory: true })
-      }
     }
 
   }

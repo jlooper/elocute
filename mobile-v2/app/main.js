@@ -31,19 +31,19 @@ TNSFontIcon.loadCss();
 Vue.filter('fonticon', fonticon)
 
 firebase.init({
-  // onAuthStateChanged: data => { // optional
-  //   console.log((data.loggedIn ? "Logged in to firebase" : "Logged out from firebase") + " (init's onAuthStateChanged callback)");
-  //   // if (data.loggedIn) {
-  //   //   backendService.token = data.user.uid
-  //   //   console.log(data.user.uid)
-  //   //   store.commit('setUser', data.user)
-  //   //   Vue.navigateTo(routes.home)
-  //   // }
-  //   // else {
-  //   //   backendService.token = ""
-  //   //   Vue.navigateTo(routes.login)
-  //   // }
-  // }
+  onAuthStateChanged: data => { // optional
+    console.log((data.loggedIn ? "Logged in to firebase" : "Logged out from firebase") + " (init's onAuthStateChanged callback)");
+    if (data.loggedIn) {
+      backendService.token = data.user.uid
+      console.log(data.user.uid)
+      store.commit('setUser', data.user)
+      Vue.navigateTo(routes.home, { clearHistory: true })
+    }
+    else {
+      backendService.token = ""
+      Vue.navigateTo(routes.login, { clearHistory: true })
+    }
+  }
 }).then(
   instance => {
     console.log("firebase.init done");

@@ -123,7 +123,7 @@
           .login(this.user)
           .then(() => {
             this.isAuthenticating = false;
-            this.$changeRoute('home', {clearHistory: true})
+            // this.$changeRoute('home', {clearHistory: true})
           })
           .catch((error) => {
             console.error(error)
